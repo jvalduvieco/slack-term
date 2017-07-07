@@ -10,12 +10,14 @@ import (
 )
 
 type SlackService struct {
-	Client        *slack.Client
-	RTM           *slack.RTM
-	SlackChannels []interface{}
-	Channels      []Channel
-	UserCache     map[string]string
-	CurrentUserID string
+	Client              *slack.Client
+	RTM                 *slack.RTM
+	JoinedSlackChannels []interface{}
+	UnjoinedSlackChannels []interface{}
+	JoinedChannels        []Channel
+	UnjoinedChannels    []Channel
+	UserCache           map[string]string
+	CurrentUserID       string
 }
 
 type Channel struct {
@@ -59,36 +61,44 @@ func NewSlackService(token string) *SlackService {
 }
 
 // GetChannels will retrieve all available channels, groups, and im channels.
+// We will return different channel collections, first channels the user is a member of
+// and secondly a list of unarchived channels the user can join
 // Because the channels are of different types, we will append them to
 // an []interface as well as to a []Channel which will give us easy access
 // to the id and name of the Channel.
-func (s *SlackService) GetChannels() []Channel {
-	var chans []Channel
+func (s *SlackService) GetChannels() ([]Channel, []Channel) {
+	var joinedChannels []Channel
+	var unjoinedChannels []Channel
 
 	// Channel
 	slackChans, err := s.Client.GetChannels(true)
 	if err != nil {
-		chans = append(chans, Channel{})
+		//chans = append(chans, Channel{})
 	}
 	for _, chn := range slackChans {
-		s.SlackChannels = append(s.SlackChannels, chn)
-		chans = append(chans, Channel{chn.ID, chn.Name, chn.Topic.Value})
+		if chn.IsMember {
+			s.JoinedSlackChannels = append(s.JoinedSlackChannels, chn)
+			joinedChannels = append(joinedChannels, Channel{chn.ID, chn.Name, chn.Topic.Value})
+		} else {
+			s.UnjoinedSlackChannels = append(s.UnjoinedSlackChannels, chn)
+			unjoinedChannels = append(unjoinedChannels, Channel{chn.ID, chn.Name, chn.Topic.Value})
+		}
 	}
 
 	// Groups
 	slackGroups, err := s.Client.GetGroups(true)
 	if err != nil {
-		chans = append(chans, Channel{})
+		//chans = append(chans, Channel{})
 	}
 	for _, grp := range slackGroups {
-		s.SlackChannels = append(s.SlackChannels, grp)
-		chans = append(chans, Channel{grp.ID, grp.Name, grp.Topic.Value})
+		s.JoinedSlackChannels = append(s.JoinedSlackChannels, grp)
+		joinedChannels = append(joinedChannels, Channel{grp.ID, grp.Name, grp.Topic.Value})
 	}
 
 	// IM
 	slackIM, err := s.Client.GetIMChannels()
 	if err != nil {
-		chans = append(chans, Channel{})
+		//chans = append(chans, Channel{})
 	}
 	for _, im := range slackIM {
 
@@ -98,14 +108,15 @@ func (s *SlackService) GetChannels() []Channel {
 		// to the UserCache, so we skip it
 		name, ok := s.UserCache[im.User]
 		if ok {
-			chans = append(chans, Channel{im.ID, name, ""})
-			s.SlackChannels = append(s.SlackChannels, im)
+			s.JoinedSlackChannels = append(s.JoinedSlackChannels, im)
+			joinedChannels = append(joinedChannels, Channel{im.ID, name, ""})
 		}
 	}
 
-	s.Channels = chans
+	s.JoinedChannels = joinedChannels
+	s.UnjoinedChannels = unjoinedChannels
 
-	return chans
+	return joinedChannels, unjoinedChannels
 }
 
 // SetChannelReadMark will set the read mark for a channel, group, and im

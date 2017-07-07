@@ -90,7 +90,7 @@ func incomingMessageHandler(ctx *context.AppContext) {
 					msg := ctx.Service.CreateMessageFromMessageEvent(ev)
 
 					// Add message to the selected channel
-					if ev.Channel == ctx.Service.Channels[ctx.View.Channels.SelectedChannel].ID {
+					if ev.Channel == ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].ID {
 
 						// reverse order of messages, mainly done
 						// when attachments are added to message
@@ -166,7 +166,7 @@ func actionSend(ctx *context.AppContext) {
 
 		ctx.View.Input.SendMessage(
 			ctx.Service,
-			ctx.Service.Channels[ctx.View.Channels.SelectedChannel].ID,
+			ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].ID,
 			message,
 		)
 	}
@@ -191,7 +191,7 @@ func actionCommandMode(ctx *context.AppContext) {
 func actionGetMessages(ctx *context.AppContext) {
 	ctx.View.Chat.GetMessages(
 		ctx.Service,
-		ctx.Service.Channels[ctx.View.Channels.SelectedChannel],
+		ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel],
 	)
 
 	termui.Render(ctx.View.Chat)
@@ -246,12 +246,12 @@ func actionChangeChannel(ctx *context.AppContext) {
 	// Get message for the new channel
 	ctx.View.Chat.GetMessages(
 		ctx.Service,
-		ctx.Service.SlackChannels[ctx.View.Channels.SelectedChannel],
+		ctx.Service.JoinedSlackChannels[ctx.View.Channels.SelectedChannel],
 	)
 
 	// Set channel name for the Chat pane
 	ctx.View.Chat.SetBorderLabel(
-		ctx.Service.Channels[ctx.View.Channels.SelectedChannel],
+		ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel],
 	)
 
 	// Set read mark

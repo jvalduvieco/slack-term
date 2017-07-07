@@ -22,8 +22,8 @@ func CreateChatView(svc *service.SlackService) *View {
 	chat := components.CreateChat(
 		svc,
 		input.Par.Height,
-		svc.SlackChannels[channels.SelectedChannel],
-		svc.Channels[channels.SelectedChannel],
+		svc.JoinedSlackChannels[channels.SelectedChannel],
+		svc.JoinedChannels[channels.SelectedChannel],
 	)
 
 	mode := components.CreateMode()

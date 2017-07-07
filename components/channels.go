@@ -114,7 +114,8 @@ func (c *Channels) SetY(y int) {
 
 // GetChannels will get all available channels from the SlackService
 func (c *Channels) GetChannels(svc *service.SlackService) {
-	for _, slackChan := range svc.GetChannels() {
+	joined, _ := svc.GetChannels()
+	for _, slackChan := range joined {
 		c.List.Items = append(c.List.Items, fmt.Sprintf("  %s", slackChan.Name))
 	}
 }
@@ -192,7 +193,7 @@ func (c *Channels) NewMessage(svc *service.SlackService, channelID string) {
 	var index int
 
 	// Get the correct Channel from svc.Channels
-	for i, channel := range svc.Channels {
+	for i, channel := range svc.JoinedChannels {
 		if channelID == channel.ID {
 			index = i
 			break
@@ -222,5 +223,5 @@ func (c *Channels) ClearNewMessageIndicator() {
 }
 
 func (c *Channels) SetReadMark(svc *service.SlackService) {
-	svc.SetChannelReadMark(svc.SlackChannels[c.SelectedChannel])
+	svc.SetChannelReadMark(svc.JoinedSlackChannels[c.SelectedChannel])
 }
