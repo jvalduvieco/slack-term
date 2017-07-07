@@ -255,7 +255,7 @@ func (s *SlackService) CreateMessage(message slack.Message) []string {
 
 	// Format message
 	msg := fmt.Sprintf(
-		"[%s] <%s> %s",
+		"[%s] <[%s](fg-green)> %s",
 		time.Unix(intTime, 0).Format("15:04"),
 		name,
 		message.Text,
