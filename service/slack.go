@@ -12,8 +12,6 @@ import (
 type SlackService struct {
 	Client              *slack.Client
 	RTM                 *slack.RTM
-	JoinedSlackChannels []interface{}
-	UnjoinedSlackChannels []interface{}
 	JoinedChannels        []Channel
 	UnjoinedChannels    []Channel
 	UserCache           map[string]string
@@ -24,11 +22,12 @@ type Channel struct {
 	ID    string
 	Name  string
 	Topic string
+	SlackChannel interface{}
 }
 
-// NewSlackService is the constructor for the SlackService and will initialize
+// CreateSlackService is the constructor for the SlackService and will initialize
 // the RTM and a Client
-func NewSlackService(token string) *SlackService {
+func CreateSlackService(token string) *SlackService {
 	svc := &SlackService{
 		Client:    slack.New(token),
 		UserCache: make(map[string]string),
@@ -67,9 +66,6 @@ func NewSlackService(token string) *SlackService {
 // an []interface as well as to a []Channel which will give us easy access
 // to the id and name of the Channel.
 func (s *SlackService) GetChannels() ([]Channel, []Channel) {
-	var joinedChannels []Channel
-	var unjoinedChannels []Channel
-
 	// Channel
 	slackChans, err := s.Client.GetChannels(true)
 	if err != nil {
@@ -77,11 +73,9 @@ func (s *SlackService) GetChannels() ([]Channel, []Channel) {
 	}
 	for _, chn := range slackChans {
 		if chn.IsMember {
-			s.JoinedSlackChannels = append(s.JoinedSlackChannels, chn)
-			joinedChannels = append(joinedChannels, Channel{chn.ID, chn.Name, chn.Topic.Value})
+			s.JoinedChannels = append(s.JoinedChannels, Channel{chn.ID, chn.Name, chn.Topic.Value, chn})
 		} else {
-			s.UnjoinedSlackChannels = append(s.UnjoinedSlackChannels, chn)
-			unjoinedChannels = append(unjoinedChannels, Channel{chn.ID, chn.Name, chn.Topic.Value})
+			s.UnjoinedChannels = append(s.UnjoinedChannels, Channel{chn.ID, chn.Name, chn.Topic.Value, chn})
 		}
 	}
 
@@ -91,8 +85,7 @@ func (s *SlackService) GetChannels() ([]Channel, []Channel) {
 		//chans = append(chans, Channel{})
 	}
 	for _, grp := range slackGroups {
-		s.JoinedSlackChannels = append(s.JoinedSlackChannels, grp)
-		joinedChannels = append(joinedChannels, Channel{grp.ID, grp.Name, grp.Topic.Value})
+		s.JoinedChannels = append(s.JoinedChannels, Channel{grp.ID, grp.Name, grp.Topic.Value, grp})
 	}
 
 	// IM
@@ -108,15 +101,11 @@ func (s *SlackService) GetChannels() ([]Channel, []Channel) {
 		// to the UserCache, so we skip it
 		name, ok := s.UserCache[im.User]
 		if ok {
-			s.JoinedSlackChannels = append(s.JoinedSlackChannels, im)
-			joinedChannels = append(joinedChannels, Channel{im.ID, name, ""})
+			s.JoinedChannels = append(s.JoinedChannels, Channel{im.ID, name, "", im})
 		}
 	}
 
-	s.JoinedChannels = joinedChannels
-	s.UnjoinedChannels = unjoinedChannels
-
-	return joinedChannels, unjoinedChannels
+	return s.JoinedChannels , s.UnjoinedChannels
 }
 
 // SetChannelReadMark will set the read mark for a channel, group, and im

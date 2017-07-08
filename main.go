@@ -32,7 +32,6 @@ GLOBAL OPTIONS:
 
 var (
 	flgConfig string
-	flgUsage  bool
 )
 
 func init() {

@@ -121,6 +121,7 @@ func incomingMessageHandler(ctx *context.AppContext) {
 // FIXME: resize only seems to work for width and resizing it too small
 // will cause termui to panic
 func actionResize(ctx *context.AppContext) {
+	_ = ctx
 	termui.Body.Width = termui.TermWidth()
 	termui.Body.Align()
 	termui.Render(termui.Body)
@@ -171,7 +172,8 @@ func actionSend(ctx *context.AppContext) {
 	}
 }
 
-func actionQuit(*context.AppContext) {
+func actionQuit(ctx *context.AppContext) {
+	_ = ctx
 	termui.StopLoop()
 }
 
@@ -236,7 +238,7 @@ func actionChangeChannel(ctx *context.AppContext) {
 	// Get message for the new channel
 	ctx.View.Chat.SetMessages(
 		ctx.Service.GetMessages(
-			ctx.Service.JoinedSlackChannels[ctx.View.Channels.SelectedChannel],
+			ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].SlackChannel,
 			ctx.View.Chat.GetNumberOfMessagesVisible()))
 
 	// Set channel name for the Chat pane
@@ -247,7 +249,7 @@ func actionChangeChannel(ctx *context.AppContext) {
 	)
 
 	// Set read mark
-	ctx.Service.SetChannelReadMark(ctx.Service.JoinedSlackChannels[ctx.View.Channels.SelectedChannel])
+	ctx.Service.SetChannelReadMark(ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].SlackChannel)
 	termui.Render(ctx.View.Channels)
 	termui.Render(ctx.View.Chat)
 }

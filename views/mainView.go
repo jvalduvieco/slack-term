@@ -4,8 +4,8 @@ import (
 	"github.com/gizak/termui"
 
 	"github.com/erroneousboat/slack-term/components"
-	"github.com/erroneousboat/slack-term/service"
 	"github.com/erroneousboat/slack-term/config"
+	"github.com/erroneousboat/slack-term/service"
 )
 
 type View struct {
@@ -13,7 +13,7 @@ type View struct {
 	Chat     *components.Chat
 	Channels *components.Channels
 	Mode     *components.Mode
-	Body       *termui.Grid
+	Body     *termui.Grid
 }
 
 func CreateUIComponents(config *config.Config, svc *service.SlackService) *View {
@@ -33,7 +33,7 @@ func CreateUIComponents(config *config.Config, svc *service.SlackService) *View 
 
 	chatComponent.SetMessages(
 		svc.GetMessages(
-			svc.JoinedSlackChannels[channelsComponent.SelectedChannel],
+			svc.JoinedChannels[channelsComponent.SelectedChannel].SlackChannel,
 			chatComponent.GetNumberOfMessagesVisible()))
 	modeComponent := components.CreateMode()
 
@@ -56,7 +56,7 @@ func CreateUIComponents(config *config.Config, svc *service.SlackService) *View 
 		Channels: channelsComponent,
 		Chat:     chatComponent,
 		Mode:     modeComponent,
-		Body:		termui.Body,
+		Body:     termui.Body,
 	}
 
 	return view
