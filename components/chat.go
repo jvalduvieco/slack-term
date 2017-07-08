@@ -9,7 +9,6 @@ import (
 	"github.com/gizak/termui"
 
 	"github.com/erroneousboat/slack-term/config"
-	"github.com/erroneousboat/slack-term/service"
 )
 
 // Chat is the definition of a Chat component
@@ -19,7 +18,7 @@ type Chat struct {
 }
 
 // CreateChat is the constructor for the Chat struct
-func CreateChat(inputHeight int, selectedSlackChannel interface{}, selectedChannel service.Channel) *Chat {
+func CreateChat(inputHeight int,name string, topic string) *Chat {
 	chat := &Chat{
 		List:   termui.NewList(),
 		Offset: 0,
@@ -28,7 +27,7 @@ func CreateChat(inputHeight int, selectedSlackChannel interface{}, selectedChann
 	chat.List.Height = termui.TermHeight() - inputHeight
 	chat.List.Overflow = "wrap"
 
-	chat.SetBorderLabel(selectedChannel.Name, selectedChannel.Topic)
+	chat.SetBorderLabel(name, topic)
 
 	return chat
 }
@@ -152,7 +151,7 @@ func (c *Chat) SetY(y int) {
 	c.List.SetY(y)
 }
 
-func (c *Chat) GetNumberOfMessagesVisible() int{
+func (c *Chat) GetNumberOfMessagesVisible() int {
 	return c.List.InnerBounds().Max.Y - c.List.InnerBounds().Min.Y
 }
 
@@ -161,6 +160,7 @@ func (c *Chat) SetMessages(messages []string) {
 		c.AddMessage(message)
 	}
 }
+
 // AddMessage adds a single message to List.Items
 func (c *Chat) AddMessage(message string) {
 	c.List.Items = append(c.List.Items, html.UnescapeString(message))

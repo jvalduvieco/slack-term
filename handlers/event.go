@@ -164,11 +164,10 @@ func actionSend(ctx *context.AppContext) {
 		ctx.View.Input.Clear()
 		ctx.View.Refresh()
 
-		ctx.View.Input.SendMessage(
-			ctx.Service,
-			ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].ID,
-			message,
-		)
+		selectedChannelId := ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].ID
+		ctx.Service.SendMessage(
+			selectedChannelId,
+			message)
 	}
 }
 

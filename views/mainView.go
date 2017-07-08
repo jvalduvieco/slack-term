@@ -21,12 +21,12 @@ func CreateUIComponents(svc *service.SlackService) *View {
 	joined, _ := svc.GetChannels()
 	channelsComponent.SetChannels(joined)
 
+	selectedChannel := svc.JoinedChannels[channelsComponent.SelectedChannel]
 	chatComponent := components.CreateChat(
 		inputComponent.Par.Height,
-		svc.JoinedSlackChannels[channelsComponent.SelectedChannel],
-		svc.JoinedChannels[channelsComponent.SelectedChannel],
+		selectedChannel.Name,
+		selectedChannel.Topic,
 	)
-
 
 	chatComponent.SetMessages(
 		svc.GetMessages(
