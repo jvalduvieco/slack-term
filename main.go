@@ -61,7 +61,6 @@ func main() {
 
 	// Start terminal user interface
 	err := termui.Init()
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,23 +68,6 @@ func main() {
 
 	// Create context
 	ctx := context.CreateAppContext(flgConfig)
-
-	// Setup body
-	termui.Body.AddRows(
-		termui.NewRow(
-			termui.NewCol(ctx.Config.SidebarWidth, 0, ctx.View.Channels),
-			termui.NewCol(ctx.Config.MainWidth, 0, ctx.View.Chat),
-		),
-		termui.NewRow(
-			termui.NewCol(ctx.Config.SidebarWidth, 0, ctx.View.Mode),
-			termui.NewCol(ctx.Config.MainWidth, 0, ctx.View.Input),
-		),
-	)
-	termui.Body.Align()
-	termui.Render(termui.Body)
-
-	// Set body in context
-	ctx.Body = termui.Body
 
 	// Register handlers
 	handlers.RegisterEventHandlers(ctx)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/erroneousboat/slack-term/components"
 	"github.com/erroneousboat/slack-term/service"
+	"github.com/erroneousboat/slack-term/config"
 )
 
 type View struct {
@@ -12,9 +13,11 @@ type View struct {
 	Chat     *components.Chat
 	Channels *components.Channels
 	Mode     *components.Mode
+	Body       *termui.Grid
 }
 
-func CreateUIComponents(svc *service.SlackService) *View {
+func CreateUIComponents(config *config.Config, svc *service.SlackService) *View {
+
 	inputComponent := components.CreateInput()
 
 	channelsComponent := components.CreateChannels(inputComponent.Par.Height)
@@ -34,11 +37,26 @@ func CreateUIComponents(svc *service.SlackService) *View {
 			chatComponent.GetNumberOfMessagesVisible()))
 	modeComponent := components.CreateMode()
 
+	// Setup body
+	termui.Body.AddRows(
+		termui.NewRow(
+			termui.NewCol(config.SidebarWidth, 0, channelsComponent),
+			termui.NewCol(config.MainWidth, 0, chatComponent),
+		),
+		termui.NewRow(
+			termui.NewCol(config.SidebarWidth, 0, modeComponent),
+			termui.NewCol(config.MainWidth, 0, inputComponent),
+		),
+	)
+	termui.Body.Align()
+	termui.Render(termui.Body)
+
 	view := &View{
 		Input:    inputComponent,
 		Channels: channelsComponent,
 		Chat:     chatComponent,
 		Mode:     modeComponent,
+		Body:		termui.Body,
 	}
 
 	return view

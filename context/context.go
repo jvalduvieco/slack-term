@@ -3,7 +3,6 @@ package context
 import (
 	"log"
 
-	"github.com/gizak/termui"
 	termbox "github.com/nsf/termbox-go"
 
 	"github.com/erroneousboat/slack-term/config"
@@ -19,7 +18,6 @@ const (
 type AppContext struct {
 	EventQueue chan termbox.Event
 	Service    *service.SlackService
-	Body       *termui.Grid
 	View       *views.View
 	Config     *config.Config
 	Mode       string
@@ -28,23 +26,23 @@ type AppContext struct {
 // CreateAppContext creates an application context which can be passed
 // and referenced througout the application
 func CreateAppContext(flgConfig string) *AppContext {
-	// Load config
-	config, err := config.NewConfig(flgConfig)
+	// Load appConfig
+	appConfig, err := config.NewConfig(flgConfig)
 	if err != nil {
-		log.Fatalf("ERROR: not able to load config file (%s): %s", flgConfig, err)
+		log.Fatalf("ERROR: not able to load appConfig file (%s): %s", flgConfig, err)
 	}
 
 	// Create Service
-	svc := service.NewSlackService(config.SlackToken["VW"])
+	svc := service.NewSlackService(appConfig.SlackToken["VW"])
 
 	// Create ChatView
-	view := views.CreateUIComponents(svc)
+	view := views.CreateUIComponents(appConfig, svc)
 
 	return &AppContext{
 		EventQueue: make(chan termbox.Event, 20),
 		Service:    svc,
 		View:       view,
-		Config:     config,
+		Config:     appConfig,
 		Mode:       CommandMode,
 	}
 }
