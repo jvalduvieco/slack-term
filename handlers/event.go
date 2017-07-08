@@ -188,15 +188,6 @@ func actionCommandMode(ctx *context.AppContext) {
 	termui.Render(ctx.View.Mode)
 }
 
-func actionGetMessages(ctx *context.AppContext) {
-	ctx.View.Chat.GetMessages(
-		ctx.Service,
-		ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel],
-	)
-
-	termui.Render(ctx.View.Chat)
-}
-
 func actionMoveCursorUpChannels(ctx *context.AppContext) {
 	go func() {
 		if timer != nil {
@@ -244,10 +235,10 @@ func actionChangeChannel(ctx *context.AppContext) {
 	ctx.View.Chat.ClearMessages()
 
 	// Get message for the new channel
-	ctx.View.Chat.GetMessages(
-		ctx.Service,
-		ctx.Service.JoinedSlackChannels[ctx.View.Channels.SelectedChannel],
-	)
+	ctx.View.Chat.SetMessages(
+		ctx.Service.GetMessages(
+			ctx.Service.JoinedSlackChannels[ctx.View.Channels.SelectedChannel],
+			ctx.View.Chat.GetNumberOfMessagesVisible()))
 
 	// Set channel name for the Chat pane
 	selectedChannel := ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel]

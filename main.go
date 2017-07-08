@@ -67,7 +67,6 @@ func main() {
 	}
 	defer termui.Close()
 
-
 	// Create context
 	ctx := context.CreateAppContext(flgConfig)
 

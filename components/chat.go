@@ -19,7 +19,7 @@ type Chat struct {
 }
 
 // CreateChat is the constructor for the Chat struct
-func CreateChat(svc *service.SlackService, inputHeight int, selectedSlackChannel interface{}, selectedChannel service.Channel) *Chat {
+func CreateChat(inputHeight int, selectedSlackChannel interface{}, selectedChannel service.Channel) *Chat {
 	chat := &Chat{
 		List:   termui.NewList(),
 		Offset: 0,
@@ -28,7 +28,6 @@ func CreateChat(svc *service.SlackService, inputHeight int, selectedSlackChannel
 	chat.List.Height = termui.TermHeight() - inputHeight
 	chat.List.Overflow = "wrap"
 
-	chat.GetMessages(svc, selectedSlackChannel)
 	chat.SetBorderLabel(selectedChannel.Name, selectedChannel.Topic)
 
 	return chat
@@ -153,18 +152,15 @@ func (c *Chat) SetY(y int) {
 	c.List.SetY(y)
 }
 
-// GetMessages will get an array of strings for a specific channel which will
-// contain messages in turn all these messages will be added to List.Items
-func (c *Chat) GetMessages(svc *service.SlackService, channel interface{}) {
-	// Get the count of message that fit in the pane
-	count := c.List.InnerBounds().Max.Y - c.List.InnerBounds().Min.Y
-	messages := svc.GetMessages(channel, count)
+func (c *Chat) GetNumberOfMessagesVisible() int{
+	return c.List.InnerBounds().Max.Y - c.List.InnerBounds().Min.Y
+}
 
+func (c *Chat) SetMessages(messages []string) {
 	for _, message := range messages {
 		c.AddMessage(message)
 	}
 }
-
 // AddMessage adds a single message to List.Items
 func (c *Chat) AddMessage(message string) {
 	c.List.Items = append(c.List.Items, html.UnescapeString(message))
