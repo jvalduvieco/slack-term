@@ -10,18 +10,18 @@ import (
 )
 
 type SlackService struct {
-	Client              *slack.Client
-	RTM                 *slack.RTM
-	JoinedChannels        []Channel
-	UnjoinedChannels    []Channel
-	UserCache           map[string]string
-	CurrentUserID       string
+	Client           *slack.Client
+	RTM              *slack.RTM
+	JoinedChannels   []Channel
+	UnjoinedChannels []Channel
+	UserCache        map[string]string
+	CurrentUserID    string
 }
 
 type Channel struct {
-	ID    string
-	Name  string
-	Topic string
+	ID           string
+	Name         string
+	Topic        string
 	SlackChannel interface{}
 }
 
@@ -105,7 +105,7 @@ func (s *SlackService) GetChannels() ([]Channel, []Channel) {
 		}
 	}
 
-	return s.JoinedChannels , s.UnjoinedChannels
+	return s.JoinedChannels, s.UnjoinedChannels
 }
 
 // SetChannelReadMark will set the read mark for a channel, group, and im
