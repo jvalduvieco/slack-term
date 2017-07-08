@@ -32,9 +32,11 @@ type Channels []Channel
 func (s Channels) Len() int {
 	return len(s)
 }
+
 func (s Channels) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
+
 func (s Channels) Less(i, j int) bool {
 	var first string = fmt.Sprintf("%s %d %s", s[i].ClientId, s[i].ChannelType, s[i].Name)
 	var second string = fmt.Sprintf("%s %d %s", s[j].ClientId, s[j].ChannelType, s[j].Name)
@@ -302,16 +304,20 @@ func (s *SlackService) CreateMessage(message slack.Message, clientId string) []s
 	intTime := int64(floatTime)
 
 	// Format message
-	msg := fmt.Sprintf(
-		"[%s] <[%s](fg-green)> %s",
-		time.Unix(intTime, 0).Format("15:04"),
-		name,
-		message.Text,
-	)
+	msg := s.FormatMessage(intTime, name, message.Text)
 
 	msgs = append(msgs, msg)
 
 	return msgs
+}
+func (s *SlackService) FormatMessage(intTime int64, name string, message string) string {
+	msg := fmt.Sprintf(
+		"[%s] <[%s](fg-green)> %s",
+		time.Unix(intTime, 0).Format("15:04"),
+		name,
+		message,
+	)
+	return msg
 }
 
 func (s *SlackService) CreateMessageFromMessageEvent(message *slack.MessageEvent, clientId string) []string {
@@ -368,12 +374,7 @@ func (s *SlackService) CreateMessageFromMessageEvent(message *slack.MessageEvent
 	intTime := int64(floatTime)
 
 	// Format message
-	msg := fmt.Sprintf(
-		"[%s] <%s> %s",
-		time.Unix(intTime, 0).Format("15:04"),
-		name,
-		message.Text,
-	)
+	msg := s.FormatMessage(intTime, name, message.Text)
 
 	msgs = append(msgs, msg)
 
