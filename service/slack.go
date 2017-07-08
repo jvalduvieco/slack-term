@@ -24,10 +24,11 @@ type Channel struct {
 	Topic        string
 	SlackChannel interface{}
 	ClientId     string
-	ChannelType	 ChannelType
+	ChannelType  ChannelType
 }
 
 type Channels []Channel
+
 func (s Channels) Len() int {
 	return len(s)
 }
@@ -35,8 +36,8 @@ func (s Channels) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 func (s Channels) Less(i, j int) bool {
-	var first string = fmt.Sprintf("%s %d %s",s[i].ClientId, s[i].ChannelType, s[i].Name)
-	var second string = fmt.Sprintf("%s %d %s",s[j].ClientId, s[j].ChannelType, s[j].Name)
+	var first string = fmt.Sprintf("%s %d %s", s[i].ClientId, s[i].ChannelType, s[i].Name)
+	var second string = fmt.Sprintf("%s %d %s", s[j].ClientId, s[j].ChannelType, s[j].Name)
 	return first < second
 }
 
