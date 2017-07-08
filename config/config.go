@@ -10,7 +10,7 @@ import (
 
 // Config is the definition of a Config struct
 type Config struct {
-	SlackToken   map[string]string     `json:"slack_token"`
+	SlackTokens   map[string]string     `json:"slack_token"`
 	Theme        string                `json:"theme"`
 	SidebarWidth int                   `json:"sidebar_width"`
 	MainWidth    int                   `json:"-"`
@@ -63,7 +63,7 @@ func NewConfig(filepath string) (*Config, error) {
 		return &cfg, err
 	}
 
-	if len(cfg.SlackToken) == 0 {
+	if len(cfg.SlackTokens) == 0 {
 		return &cfg, errors.New("couldn't find 'slack_token' parameter")
 	}
 

@@ -12,6 +12,7 @@ import (
 	termbox "github.com/nsf/termbox-go"
 
 	"github.com/gizak/termui"
+	"os"
 )
 
 const (
@@ -58,6 +59,8 @@ func init() {
 
 func main() {
 
+	//err := OpenLogfile()
+
 	// Start terminal user interface
 	err := termui.Init()
 	if err != nil {
@@ -78,4 +81,15 @@ func main() {
 	}()
 
 	termui.Loop()
+}
+func OpenLogfile() error {
+	f, err := os.OpenFile("filename", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//defer to close when you're done with it, not because you think it's idiomatic!
+	defer f.Close()
+	//set output of logs to f
+	log.SetOutput(f)
+	return err
 }

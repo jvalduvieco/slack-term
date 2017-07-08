@@ -38,7 +38,9 @@ var actionMap = map[string]func(*context.AppContext){
 
 func RegisterEventHandlers(ctx *context.AppContext) {
 	anyKeyHandler(ctx)
-	incomingMessageHandler(ctx)
+	for key := range ctx.Service.Client {
+		incomingMessageHandler(ctx, key)
+	}
 	termui.Handle("/sys/wnd/resize", resizeHandler(ctx))
 }
 
@@ -78,19 +80,19 @@ func resizeHandler(ctx *context.AppContext) func(termui.Event) {
 	}
 }
 
-func incomingMessageHandler(ctx *context.AppContext) {
+func incomingMessageHandler(ctx *context.AppContext, clientId string) {
 	go func() {
 		for {
 			select {
-			case msg := <-ctx.Service.RTM.IncomingEvents:
+			case msg := <-ctx.Service.RTM[clientId].IncomingEvents:
 				switch ev := msg.Data.(type) {
 				case *slack.MessageEvent:
 
 					// Construct message
-					msg := ctx.Service.CreateMessageFromMessageEvent(ev)
+					msg := ctx.Service.CreateMessageFromMessageEvent(ev, clientId)
 
 					// Add message to the selected channel
-					if ev.Channel == ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].ID {
+					if ev.Channel == ctx.View.Channels.GetSelectedChannelId() {
 
 						// reverse order of messages, mainly done
 						// when attachments are added to message
@@ -109,7 +111,7 @@ func incomingMessageHandler(ctx *context.AppContext) {
 					// I'm currently in a channel but not in the terminal
 					// window (tmux). But only create a notification when
 					// it comes from someone else but the current user.
-					if ev.User != ctx.Service.CurrentUserID {
+					if ev.User != ctx.Service.CurrentUserID[clientId] {
 						actionNewMessage(ctx, ev.Channel)
 					}
 				}
@@ -165,9 +167,8 @@ func actionSend(ctx *context.AppContext) {
 		ctx.View.Input.Clear()
 		ctx.View.Refresh()
 
-		selectedChannelId := ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].ID
 		ctx.Service.SendMessage(
-			selectedChannelId,
+			ctx.View.Channels.GetSelectedChannelId(),
 			message)
 	}
 }
@@ -238,24 +239,23 @@ func actionChangeChannel(ctx *context.AppContext) {
 	// Get message for the new channel
 	ctx.View.Chat.SetMessages(
 		ctx.Service.GetMessages(
-			ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].SlackChannel,
+			ctx.View.Channels.GetSelectedChannelId(),
 			ctx.View.Chat.GetNumberOfMessagesVisible()))
 
 	// Set channel name for the Chat pane
-	selectedChannel := ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel]
 	ctx.View.Chat.SetBorderLabel(
-		selectedChannel.Name,
-		selectedChannel.Topic,
+		ctx.Service.GetChannelName(ctx.View.Channels.GetSelectedChannelId()),
+		ctx.Service.GetChannelTopic(ctx.View.Channels.GetSelectedChannelId()),
 	)
 
 	// Set read mark
-	ctx.Service.SetChannelReadMark(ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel].SlackChannel)
+	ctx.Service.SetChannelReadMark(ctx.View.Channels.GetSelectedChannelId())
 	termui.Render(ctx.View.Channels)
 	termui.Render(ctx.View.Chat)
 }
 
 func actionNewMessage(ctx *context.AppContext, channelID string) {
-	ctx.View.Channels.MarkAsUnread(ctx.Service.JoinedChannels, channelID)
+	ctx.View.Channels.MarkAsUnread(channelID)
 	termui.Render(ctx.View.Channels)
 }
 

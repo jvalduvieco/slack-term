@@ -33,7 +33,7 @@ func CreateAppContext(flgConfig string) *AppContext {
 	}
 
 	// Create Service
-	svc := service.CreateSlackService(appConfig.SlackToken["VW"])
+	svc := service.CreateSlackService(appConfig.SlackTokens)
 
 	// Create ChatView
 	view := views.CreateUIComponents(appConfig, svc)

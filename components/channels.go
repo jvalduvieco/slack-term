@@ -11,25 +11,26 @@ import (
 
 // Channels is the definition of a Channels component
 type Channels struct {
-	List            *termui.List
-	SelectedChannel int // index of which channel is selected from the List
-	Offset          int // from what offset are channels rendered
-	CursorPosition  int // the y position of the 'cursor'
+	List               *termui.List
+	channelIds		   map[string]int
+	SelectedListItemId int // index of which channel is selected from the List
+	Offset             int    // from what offset are channels rendered
+	CursorPosition     int    // the y position of the 'cursor'
 }
 
 // CreateChannels is the constructor for the Channels component
 func CreateChannels(inputHeight int) *Channels {
 	channels := &Channels{
 		List: termui.NewList(),
+		channelIds: make(map[string]int),
 	}
 
 	channels.List.BorderLabel = "Channels"
 	channels.List.Height = termui.TermHeight() - inputHeight
 
-	channels.SelectedChannel = 0
-	channels.Offset = 0
 	channels.CursorPosition = channels.List.InnerBounds().Min.Y
-
+	channels.SelectedListItemId = 0
+	channels.Offset = 0
 	return channels
 }
 
@@ -110,30 +111,42 @@ func (c *Channels) SetY(y int) {
 	c.List.SetY(y)
 }
 
-func (c *Channels) SetChannels(joined []service.Channel) {
-	for _, slackChan := range joined {
-		c.List.Items = append(c.List.Items, fmt.Sprintf("  %s", slackChan.Name))
+func (c *Channels) SetChannels(channels []service.Channel) {
+	for i, channel := range channels {
+		c.List.Items = append(c.List.Items, fmt.Sprintf(" [%s] %s", channel.ClientId, channel.Name))
+		c.channelIds[channel.Id] = i
 	}
 }
 
-// SetSelectedChannel sets the SelectedChannel given the index
-func (c *Channels) SetSelectedChannel(index int) {
-	c.SelectedChannel = index
+// SetSelectedItem sets the SelectedListItemId given the index
+func (c *Channels) SetSelectedItem(index int) {
+	c.SelectedListItemId = index
 }
 
-// MoveCursorUp will decrease the SelectedChannel by 1
+func (c *Channels) GetSelectedChannelId() string {
+	var result string
+
+	for key,value := range c.channelIds {
+		if value == c.SelectedListItemId {
+			result = key
+			break
+		}
+	}
+	return result
+}
+// MoveCursorUp will decrease the SelectedListItemId by 1
 func (c *Channels) MoveCursorUp() {
-	if c.SelectedChannel > 0 {
-		c.SetSelectedChannel(c.SelectedChannel - 1)
+	if c.SelectedListItemId > 0 {
+		c.SetSelectedItem(c.SelectedListItemId - 1)
 		c.ScrollUp()
 		c.MarkAsRead()
 	}
 }
 
-// MoveCursorDown will increase the SelectedChannel by 1
+// MoveCursorDown will increase the SelectedListItemId by 1
 func (c *Channels) MoveCursorDown() {
-	if c.SelectedChannel < len(c.List.Items)-1 {
-		c.SetSelectedChannel(c.SelectedChannel + 1)
+	if c.SelectedListItemId < len(c.List.Items)-1 {
+		c.SetSelectedItem(c.SelectedListItemId + 1)
 		c.ScrollDown()
 		c.MarkAsRead()
 	}
@@ -141,20 +154,20 @@ func (c *Channels) MoveCursorDown() {
 
 // MoveCursorTop will move the cursor to the top of the channels
 func (c *Channels) MoveCursorTop() {
-	c.SetSelectedChannel(0)
+	c.SetSelectedItem(0)
 	c.CursorPosition = c.List.InnerBounds().Min.Y
 	c.Offset = 0
 }
 
 // MoveCursorBottom will move the cursor to the bottom of the channels
 func (c *Channels) MoveCursorBottom() {
-	c.SetSelectedChannel(len(c.List.Items) - 1)
+	c.SetSelectedItem(len(c.List.Items) - 1)
 
 	offset := len(c.List.Items) - (c.List.InnerBounds().Max.Y - 1)
 
 	if offset < 0 {
 		c.Offset = 0
-		c.CursorPosition = c.SelectedChannel + 1
+		c.CursorPosition = c.SelectedListItemId + 1
 	} else {
 		c.Offset = offset
 		c.CursorPosition = c.List.InnerBounds().Max.Y - 1
@@ -185,21 +198,13 @@ func (c *Channels) ScrollDown() {
 
 // MarkAsUnread will be called when a new message arrives and will
 // render an asterisk in front of the channel name
-func (c *Channels) MarkAsUnread(joinedChannels []service.Channel, channelID string) {
-	var index int
-
-	// Get the correct Channel from svc.Channels
-	for i, channel := range joinedChannels {
-		if channelID == channel.ID {
-			index = i
-			break
-		}
-	}
-
-	if !strings.Contains(c.List.Items[index], "*") {
+func (c *Channels) MarkAsUnread(channelID string) {
+	if !strings.Contains(c.List.Items[c.channelIds[channelID]], "*") {
 		// The order of svc.Channels relates to the order of
 		// List.Items, index will be the index of the channel
-		c.List.Items[index] = fmt.Sprintf("* %s", strings.TrimSpace(c.List.Items[index]))
+		c.List.Items[c.channelIds[channelID]] = fmt.Sprintf(
+			"* %s",
+			strings.TrimSpace(c.List.Items[c.channelIds[channelID]]))
 	}
 
 	// Play terminal bell sound
@@ -210,10 +215,10 @@ func (c *Channels) MarkAsUnread(joinedChannels []service.Channel, channelID stri
 // received a new message. This will happen as one will move up or down the
 // cursor for Channels
 func (c *Channels) MarkAsRead() {
-	channelName := strings.Split(c.List.Items[c.SelectedChannel], "* ")
+	channelName := strings.Split(c.List.Items[c.SelectedListItemId], "* ")
 	if len(channelName) > 1 {
-		c.List.Items[c.SelectedChannel] = fmt.Sprintf("  %s", channelName[1])
+		c.List.Items[c.SelectedListItemId] = fmt.Sprintf("  %s", channelName[1])
 	} else {
-		c.List.Items[c.SelectedChannel] = channelName[0]
+		c.List.Items[c.SelectedListItemId] = channelName[0]
 	}
 }
