@@ -18,7 +18,7 @@ type Chat struct {
 }
 
 // CreateChat is the constructor for the Chat struct
-func CreateChat(inputHeight int,name string, topic string) *Chat {
+func CreateChat(inputHeight int, name string, topic string) *Chat {
 	chat := &Chat{
 		List:   termui.NewList(),
 		Offset: 0,
