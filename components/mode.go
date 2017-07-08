@@ -10,7 +10,7 @@ type Mode struct {
 // CreateMode is the constructor of the Mode struct
 func CreateMode() *Mode {
 	mode := &Mode{
-		Par: termui.NewPar("NORMAL"),
+		Par: termui.NewPar("COMMAND"),
 	}
 
 	mode.Par.Height = 3

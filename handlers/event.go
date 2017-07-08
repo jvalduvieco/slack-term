@@ -184,7 +184,7 @@ func actionInsertMode(ctx *context.AppContext) {
 
 func actionCommandMode(ctx *context.AppContext) {
 	ctx.Mode = context.CommandMode
-	ctx.View.Mode.Par.Text = "NORMAL"
+	ctx.View.Mode.Par.Text = "COMMAND"
 	termui.Render(ctx.View.Mode)
 }
 
