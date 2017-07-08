@@ -18,7 +18,7 @@ type Channels struct {
 }
 
 // CreateChannels is the constructor for the Channels component
-func CreateChannels(svc *service.SlackService, inputHeight int) *Channels {
+func CreateChannels(inputHeight int) *Channels {
 	channels := &Channels{
 		List: termui.NewList(),
 	}
@@ -29,8 +29,6 @@ func CreateChannels(svc *service.SlackService, inputHeight int) *Channels {
 	channels.SelectedChannel = 0
 	channels.Offset = 0
 	channels.CursorPosition = channels.List.InnerBounds().Min.Y
-
-	channels.GetChannels(svc)
 
 	return channels
 }
@@ -112,9 +110,7 @@ func (c *Channels) SetY(y int) {
 	c.List.SetY(y)
 }
 
-// GetChannels will get all available channels from the SlackService
-func (c *Channels) GetChannels(svc *service.SlackService) {
-	joined, _ := svc.GetChannels()
+func (c *Channels) SetChannels(joined []service.Channel) {
 	for _, slackChan := range joined {
 		c.List.Items = append(c.List.Items, fmt.Sprintf("  %s", slackChan.Name))
 	}
@@ -189,11 +185,11 @@ func (c *Channels) ScrollDown() {
 
 // MarkAsUnread will be called when a new message arrives and will
 // render an asterisk in front of the channel name
-func (c *Channels) MarkAsUnread(svc *service.SlackService, channelID string) {
+func (c *Channels) MarkAsUnread(joinedChannels []service.Channel, channelID string) {
 	var index int
 
 	// Get the correct Channel from svc.Channels
-	for i, channel := range svc.JoinedChannels {
+	for i, channel := range joinedChannels {
 		if channelID == channel.ID {
 			index = i
 			break
@@ -220,8 +216,4 @@ func (c *Channels) MarkAsRead() {
 	} else {
 		c.List.Items[c.SelectedChannel] = channelName[0]
 	}
-}
-
-func (c *Channels) UpdateAPIReadMark(svc *service.SlackService) {
-	svc.SetChannelReadMark(svc.JoinedSlackChannels[c.SelectedChannel])
 }

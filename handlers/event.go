@@ -257,14 +257,13 @@ func actionChangeChannel(ctx *context.AppContext) {
 	)
 
 	// Set read mark
-	ctx.View.Channels.UpdateAPIReadMark(ctx.Service)
-
+	ctx.Service.SetChannelReadMark(ctx.Service.JoinedSlackChannels[ctx.View.Channels.SelectedChannel])
 	termui.Render(ctx.View.Channels)
 	termui.Render(ctx.View.Chat)
 }
 
 func actionNewMessage(ctx *context.AppContext, channelID string) {
-	ctx.View.Channels.MarkAsUnread(ctx.Service, channelID)
+	ctx.View.Channels.MarkAsUnread(ctx.Service.JoinedChannels, channelID)
 	termui.Render(ctx.View.Channels)
 }
 

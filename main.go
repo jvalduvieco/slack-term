@@ -61,10 +61,12 @@ func main() {
 
 	// Start terminal user interface
 	err := termui.Init()
+
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer termui.Close()
+
 
 	// Create context
 	ctx := context.CreateAppContext(flgConfig)

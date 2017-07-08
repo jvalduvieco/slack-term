@@ -17,7 +17,9 @@ type View struct {
 func CreateUIComponents(svc *service.SlackService) *View {
 	input := components.CreateInput()
 
-	channels := components.CreateChannels(svc, input.Par.Height)
+	channels := components.CreateChannels(input.Par.Height)
+	joined, _ := svc.GetChannels()
+	channels.SetChannels(joined)
 
 	chat := components.CreateChat(
 		svc,
