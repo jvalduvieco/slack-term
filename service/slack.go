@@ -24,7 +24,29 @@ type Channel struct {
 	Topic        string
 	SlackChannel interface{}
 	ClientId     string
+	ChannelType	 ChannelType
 }
+
+type Channels []Channel
+func (s Channels) Len() int {
+	return len(s)
+}
+func (s Channels) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s Channels) Less(i, j int) bool {
+	var first string = fmt.Sprintf("%s %d %s",s[i].ClientId, s[i].ChannelType, s[i].Name)
+	var second string = fmt.Sprintf("%s %d %s",s[j].ClientId, s[j].ChannelType, s[j].Name)
+	return first < second
+}
+
+type ChannelType uint8
+
+const (
+	CHANNEL ChannelType = iota + 1
+	GROUP
+	IM
+)
 
 // CreateSlackService is the constructor for the SlackService and will initialize
 // the RTM and a ClientId
@@ -90,7 +112,7 @@ func (s *SlackService) UpdateChannels() {
 
 func (s *SlackService) GetChannelList() []Channel {
 	s.UpdateChannels()
-	var result []Channel
+	var result Channels
 	for _, channel := range s.JoinedChannels {
 		result = append(result, channel)
 	}
@@ -110,7 +132,7 @@ func (s *SlackService) FetchIM(currentClientId string) error {
 		// to the UserCache, so we skip it
 		name, ok := s.UserCache[im.User]
 		if ok {
-			s.JoinedChannels[im.ID] = Channel{im.ID, name, "", im, currentClientId}
+			s.JoinedChannels[im.ID] = Channel{im.ID, name, "", im, currentClientId, IM}
 		}
 	}
 	return err
@@ -122,7 +144,7 @@ func (s *SlackService) FetchGroups(currentClientId string) error {
 		//chans = append(chans, Channel{})
 	}
 	for _, grp := range slackGroups {
-		s.JoinedChannels[grp.ID] = Channel{grp.ID, grp.Name, grp.Topic.Value, grp, currentClientId}
+		s.JoinedChannels[grp.ID] = Channel{grp.ID, grp.Name, grp.Topic.Value, grp, currentClientId, GROUP}
 	}
 	return err
 }
@@ -133,9 +155,9 @@ func (s *SlackService) FetchChannels(currentClientId string) error {
 	}
 	for _, chn := range slackChans {
 		if chn.IsMember {
-			s.JoinedChannels[chn.ID] = Channel{chn.ID, chn.Name, chn.Topic.Value, chn, currentClientId}
+			s.JoinedChannels[chn.ID] = Channel{chn.ID, chn.Name, chn.Topic.Value, chn, currentClientId, CHANNEL}
 		} else {
-			s.UnjoinedChannels[chn.ID] = Channel{chn.ID, chn.Name, chn.Topic.Value, chn, currentClientId}
+			s.UnjoinedChannels[chn.ID] = Channel{chn.ID, chn.Name, chn.Topic.Value, chn, currentClientId, CHANNEL}
 		}
 	}
 	return err

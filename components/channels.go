@@ -7,6 +7,7 @@ import (
 	"github.com/gizak/termui"
 
 	"github.com/erroneousboat/slack-term/service"
+	"sort"
 )
 
 // Channels is the definition of a Channels component
@@ -111,7 +112,8 @@ func (c *Channels) SetY(y int) {
 	c.List.SetY(y)
 }
 
-func (c *Channels) SetChannels(channels []service.Channel) {
+func (c *Channels) SetChannels(channels service.Channels) {
+	sort.Sort(channels)
 	for i, channel := range channels {
 		c.List.Items = append(c.List.Items, fmt.Sprintf(" [%s] %s", channel.ClientId, channel.Name))
 		c.channelIds[channel.Id] = i
