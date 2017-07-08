@@ -35,10 +35,10 @@ func CreateAppContext(flgConfig string) *AppContext {
 	}
 
 	// Create Service
-	svc := service.NewSlackService(config.SlackToken)
+	svc := service.NewSlackService(config.SlackToken["VW"])
 
 	// Create ChatView
-	view := views.CreateChatView(svc)
+	view := views.CreateUIComponents(svc)
 
 	return &AppContext{
 		EventQueue: make(chan termbox.Event, 20),

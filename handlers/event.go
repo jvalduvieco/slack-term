@@ -250,19 +250,21 @@ func actionChangeChannel(ctx *context.AppContext) {
 	)
 
 	// Set channel name for the Chat pane
+	selectedChannel := ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel]
 	ctx.View.Chat.SetBorderLabel(
-		ctx.Service.JoinedChannels[ctx.View.Channels.SelectedChannel],
+		selectedChannel.Name,
+		selectedChannel.Topic,
 	)
 
 	// Set read mark
-	ctx.View.Channels.SetReadMark(ctx.Service)
+	ctx.View.Channels.UpdateAPIReadMark(ctx.Service)
 
 	termui.Render(ctx.View.Channels)
 	termui.Render(ctx.View.Chat)
 }
 
 func actionNewMessage(ctx *context.AppContext, channelID string) {
-	ctx.View.Channels.NewMessage(ctx.Service, channelID)
+	ctx.View.Channels.MarkAsUnread(ctx.Service, channelID)
 	termui.Render(ctx.View.Channels)
 }
 

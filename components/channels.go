@@ -130,7 +130,7 @@ func (c *Channels) MoveCursorUp() {
 	if c.SelectedChannel > 0 {
 		c.SetSelectedChannel(c.SelectedChannel - 1)
 		c.ScrollUp()
-		c.ClearNewMessageIndicator()
+		c.MarkAsRead()
 	}
 }
 
@@ -139,7 +139,7 @@ func (c *Channels) MoveCursorDown() {
 	if c.SelectedChannel < len(c.List.Items)-1 {
 		c.SetSelectedChannel(c.SelectedChannel + 1)
 		c.ScrollDown()
-		c.ClearNewMessageIndicator()
+		c.MarkAsRead()
 	}
 }
 
@@ -187,9 +187,9 @@ func (c *Channels) ScrollDown() {
 	}
 }
 
-// NewMessage will be called when a new message arrives and will
+// MarkAsUnread will be called when a new message arrives and will
 // render an asterisk in front of the channel name
-func (c *Channels) NewMessage(svc *service.SlackService, channelID string) {
+func (c *Channels) MarkAsUnread(svc *service.SlackService, channelID string) {
 	var index int
 
 	// Get the correct Channel from svc.Channels
@@ -210,10 +210,10 @@ func (c *Channels) NewMessage(svc *service.SlackService, channelID string) {
 	fmt.Print("\a")
 }
 
-// ClearNewMessageIndicator will remove the asterisk in front of a channel that
+// MarkAsRead will remove the asterisk in front of a channel that
 // received a new message. This will happen as one will move up or down the
 // cursor for Channels
-func (c *Channels) ClearNewMessageIndicator() {
+func (c *Channels) MarkAsRead() {
 	channelName := strings.Split(c.List.Items[c.SelectedChannel], "* ")
 	if len(channelName) > 1 {
 		c.List.Items[c.SelectedChannel] = fmt.Sprintf("  %s", channelName[1])
@@ -222,6 +222,6 @@ func (c *Channels) ClearNewMessageIndicator() {
 	}
 }
 
-func (c *Channels) SetReadMark(svc *service.SlackService) {
+func (c *Channels) UpdateAPIReadMark(svc *service.SlackService) {
 	svc.SetChannelReadMark(svc.JoinedSlackChannels[c.SelectedChannel])
 }

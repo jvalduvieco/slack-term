@@ -58,6 +58,7 @@ func init() {
 }
 
 func main() {
+
 	// Start terminal user interface
 	err := termui.Init()
 	if err != nil {

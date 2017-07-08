@@ -29,7 +29,7 @@ func CreateChat(svc *service.SlackService, inputHeight int, selectedSlackChannel
 	chat.List.Overflow = "wrap"
 
 	chat.GetMessages(svc, selectedSlackChannel)
-	chat.SetBorderLabel(selectedChannel)
+	chat.SetBorderLabel(selectedChannel.Name, selectedChannel.Topic)
 
 	return chat
 }
@@ -208,15 +208,15 @@ func (c *Chat) ScrollDown() {
 }
 
 // SetBorderLabel will set Label of the Chat pane to the specified string
-func (c *Chat) SetBorderLabel(channel service.Channel) {
+func (c *Chat) SetBorderLabel(name string, topic string) {
 	var channelName string
-	if channel.Topic != "" {
+	if topic != "" {
 		channelName = fmt.Sprintf("%s - %s",
-			channel.Name,
-			channel.Topic,
+			name,
+			topic,
 		)
 	} else {
-		channelName = channel.Name
+		channelName = name
 	}
 	c.List.BorderLabel = channelName
 }
