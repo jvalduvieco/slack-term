@@ -10,7 +10,7 @@ import (
 
 // Config is the definition of a Config struct
 type Config struct {
-	SlackTokens   map[string]string     `json:"slack_token"`
+	SlackTokens  map[string]string     `json:"slack_token"`
 	Theme        string                `json:"theme"`
 	SidebarWidth int                   `json:"sidebar_width"`
 	MainWidth    int                   `json:"-"`

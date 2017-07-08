@@ -30,12 +30,12 @@ type Channel struct {
 // the RTM and a ClientId
 func CreateSlackService(tokens map[string]string) *SlackService {
 	svc := &SlackService{
-		Client:    make(map[string]*slack.Client),
-		RTM:	make(map[string]*slack.RTM),
-		JoinedChannels: make(map[string]Channel),
+		Client:           make(map[string]*slack.Client),
+		RTM:              make(map[string]*slack.RTM),
+		JoinedChannels:   make(map[string]Channel),
 		UnjoinedChannels: make(map[string]Channel),
-		UserCache: make(map[string]string),
-		CurrentUserID: make(map[string]string),
+		UserCache:        make(map[string]string),
+		CurrentUserID:    make(map[string]string),
 	}
 
 	for clientId, token := range tokens {
@@ -65,10 +65,8 @@ func CreateSlackService(tokens map[string]string) *SlackService {
 		}
 	}
 
-
 	return svc
 }
-
 
 // UpdateChannels will retrieve all available channels, groups, and im channels.
 // We will return different channel collections, first channels the user is a member of
@@ -90,7 +88,7 @@ func (s *SlackService) UpdateChannels() {
 	}
 }
 
-func (s *SlackService) GetChannelList() []Channel{
+func (s *SlackService) GetChannelList() []Channel {
 	s.UpdateChannels()
 	var result []Channel
 	for _, channel := range s.JoinedChannels {
@@ -148,21 +146,21 @@ func (s *SlackService) FetchChannels(currentClientId string) error {
 func (s *SlackService) SetChannelReadMark(channelId string) {
 	selectedChannel := s.JoinedChannels[channelId]
 	switch channel := selectedChannel.SlackChannel.(type) {
-		case slack.Channel:
-			s.Client[selectedChannel.ClientId].SetChannelReadMark(
-				channel.ID, fmt.Sprintf("%f",
-					float64(time.Now().Unix())),
-			)
-		case slack.Group:
-			s.Client[selectedChannel.ClientId].SetGroupReadMark(
-				channel.ID, fmt.Sprintf("%f",
-					float64(time.Now().Unix())),
-			)
-		case slack.IM:
-			s.Client[selectedChannel.ClientId].MarkIMChannel(
-				channel.ID, fmt.Sprintf("%f",
-					float64(time.Now().Unix())),
-			)
+	case slack.Channel:
+		s.Client[selectedChannel.ClientId].SetChannelReadMark(
+			channel.ID, fmt.Sprintf("%f",
+				float64(time.Now().Unix())),
+		)
+	case slack.Group:
+		s.Client[selectedChannel.ClientId].SetGroupReadMark(
+			channel.ID, fmt.Sprintf("%f",
+				float64(time.Now().Unix())),
+		)
+	case slack.IM:
+		s.Client[selectedChannel.ClientId].MarkIMChannel(
+			channel.ID, fmt.Sprintf("%f",
+				float64(time.Now().Unix())),
+		)
 	}
 }
 
@@ -366,6 +364,7 @@ func (s *SlackService) GetChannelName(channelId string) string {
 func (s *SlackService) GetChannelTopic(channelId string) string {
 	return s.JoinedChannels[channelId].Topic
 }
+
 // createMessageFromAttachments will construct a array of string of the Field
 // values of Attachments from a Message.
 func createMessageFromAttachments(atts []slack.Attachment) []string {

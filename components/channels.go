@@ -12,16 +12,16 @@ import (
 // Channels is the definition of a Channels component
 type Channels struct {
 	List               *termui.List
-	channelIds		   map[string]int
+	channelIds         map[string]int
 	SelectedListItemId int // index of which channel is selected from the List
-	Offset             int    // from what offset are channels rendered
-	CursorPosition     int    // the y position of the 'cursor'
+	Offset             int // from what offset are channels rendered
+	CursorPosition     int // the y position of the 'cursor'
 }
 
 // CreateChannels is the constructor for the Channels component
 func CreateChannels(inputHeight int) *Channels {
 	channels := &Channels{
-		List: termui.NewList(),
+		List:       termui.NewList(),
 		channelIds: make(map[string]int),
 	}
 
@@ -126,7 +126,7 @@ func (c *Channels) SetSelectedItem(index int) {
 func (c *Channels) GetSelectedChannelId() string {
 	var result string
 
-	for key,value := range c.channelIds {
+	for key, value := range c.channelIds {
 		if value == c.SelectedListItemId {
 			result = key
 			break
@@ -134,6 +134,7 @@ func (c *Channels) GetSelectedChannelId() string {
 	}
 	return result
 }
+
 // MoveCursorUp will decrease the SelectedListItemId by 1
 func (c *Channels) MoveCursorUp() {
 	if c.SelectedListItemId > 0 {
