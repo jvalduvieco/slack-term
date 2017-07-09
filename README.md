@@ -1,21 +1,23 @@
 Slack-Term
 ==========
+This is the result of me playing with go using slack-term by [erroneousboat](https://github.com/erroneousboat) great [slack-term](https://github.com/erroneousboat/slack-term)
+project. Don't consider stable but it's working (most of the time). Lot's to improve.
 
-A [Slack](https://slack.com) client for your terminal.
+A [Slack](https://slack.com) client for your terminal. Supports multiple teams, you need one token for each team.
 
 ![Screenshot](/screenshot.png?raw=true)
 
 Getting started
 ---------------
 
-1. [Download](https://github.com/erroneousboat/slack-term/releases) a
+1. [Download](https://github.com/jvalduvieco/slack-term/releases) a
    compatible version for your system, and place where you can access it from
    the command line like, `~/bin`, `/usr/local/bin`, or `/usr/local/sbin`. Or
    get it via Go:
 
 
     ```bash
-    $ go get -u github.com/erroneousboat/slack-term
+    $ go get -u github.com/jvalduvieco/slack-term
     ```
 
 2. Get a slack token, click [here](https://api.slack.com/docs/oauth-test-tokens) 
@@ -25,7 +27,12 @@ Getting started
 
     ```javascript
     {
-        "slack_token": "yourslacktokenhere",
+        "slack_token":
+          {
+            "T1": "your_T1_token_here",
+            "T2": "your_T2_token_here",
+            "T3": "your_T3_token_here"
+          },
 
         // OPTIONAL: add the following to use light theme, default is dark
         "theme": "light",
