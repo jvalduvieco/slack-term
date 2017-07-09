@@ -7,6 +7,7 @@ import (
 	"time"
 
 	slack "github.com/nlopes/slack"
+	"regexp"
 )
 
 // SlackService is the service that manages slack connections
@@ -274,8 +275,64 @@ func (s *SlackService) GetMessages(channelID string, count int) []string {
 // associated with messages.
 func (s *SlackService) CreateMessage(message slack.Message, clientID string) []string {
 	var msgs []string
-	var name string
 
+	name := s.getMessageUserName(message, clientID)
+
+	// When there are attachments append them
+	if len(message.Attachments) > 0 {
+		msgs = append(msgs, createMessageFromAttachments(message.Attachments)...)
+	}
+
+	intTime := parseMessageTimestamp(message)
+
+	// Format message
+	msg := s.formatMessage(intTime, name, message.Text)
+
+	msgs = append(msgs, msg)
+
+	return msgs
+}
+
+// CreateMessageFromMessageEvent creates a message from an event
+func (s *SlackService) CreateMessageFromMessageEvent(message *slack.MessageEvent, clientID string) []string {
+
+	var msgs []string
+
+	// Append (edited) when an edited message is received
+	if message.SubType == "message_changed" {
+		message = &slack.MessageEvent{Msg: *message.SubMessage}
+		message.Text = fmt.Sprintf("%s (edited)", message.Text)
+	}
+
+	// Get username from cache
+	name := s.getMessageUserName(slack.Message(*message), clientID)
+
+	// When there are attachments append them
+	if len(message.Attachments) > 0 {
+		msgs = append(msgs, createMessageFromAttachments(message.Attachments)...)
+	}
+
+	intTime := parseMessageTimestamp(slack.Message(*message))
+
+	// Format message
+	msg := s.formatMessage(intTime, name, message.Text)
+
+	msgs = append(msgs, msg)
+
+	return msgs
+}
+
+func parseMessageTimestamp(message slack.Message) int64 {
+	// Parse time
+	floatTime, err := strconv.ParseFloat(message.Timestamp, 64)
+	if err != nil {
+		floatTime = 0.0
+	}
+	intTime := int64(floatTime)
+	return intTime
+}
+
+func (s *SlackService) getMessageUserName(message slack.Message, clientID string) (string) {
 	// Get username from cache
 	name, ok := s.userCache[message.User]
 
@@ -301,101 +358,22 @@ func (s *SlackService) CreateMessage(message slack.Message, clientID string) []s
 			}
 		}
 	}
-
 	if name == "" {
 		name = "unknown"
 	}
-
-	// When there are attachments append them
-	if len(message.Attachments) > 0 {
-		msgs = append(msgs, createMessageFromAttachments(message.Attachments)...)
-	}
-
-	// Parse time
-	floatTime, err := strconv.ParseFloat(message.Timestamp, 64)
-	if err != nil {
-		floatTime = 0.0
-	}
-	intTime := int64(floatTime)
-
-	// Format message
-	msg := s.formatMessage(intTime, name, message.Text)
-
-	msgs = append(msgs, msg)
-
-	return msgs
+	return name
 }
 
 func (s *SlackService) formatMessage(intTime int64, name string, message string) string {
+	re := regexp.MustCompile(`<[!@].+\|@?(\w+)>`)
+
 	msg := fmt.Sprintf(
 		"[%s] <[%s](fg-green)> %s",
 		time.Unix(intTime, 0).Format("15:04"),
 		name,
-		message,
+		re.ReplaceAllString(message, "[$1](fg-cyan)"),
 	)
 	return msg
-}
-
-// CreateMessageFromMessageEvent creates a message from an event
-func (s *SlackService) CreateMessageFromMessageEvent(message *slack.MessageEvent, clientID string) []string {
-
-	var msgs []string
-	var name string
-
-	// Append (edited) when an edited message is received
-	if message.SubType == "message_changed" {
-		message = &slack.MessageEvent{Msg: *message.SubMessage}
-		message.Text = fmt.Sprintf("%s (edited)", message.Text)
-	}
-
-	// Get username from cache
-	name, ok := s.userCache[message.User]
-
-	// Name not in cache
-	if !ok {
-		if message.BotID != "" {
-			// Name not found, perhaps a bot, use Username
-			name, ok = s.userCache[message.BotID]
-			if !ok {
-				// Not found in cache, add it
-				name = message.Username
-				s.userCache[message.BotID] = message.Username
-			}
-		} else {
-			// Not a bot, not in cache, get user info
-			user, err := s.Client[clientID].GetUserInfo(message.User)
-			if err != nil {
-				name = "unknown"
-				s.userCache[message.User] = name
-			} else {
-				name = user.Name
-				s.userCache[message.User] = user.Name
-			}
-		}
-	}
-
-	if name == "" {
-		name = "unknown"
-	}
-
-	// When there are attachments append them
-	if len(message.Attachments) > 0 {
-		msgs = append(msgs, createMessageFromAttachments(message.Attachments)...)
-	}
-
-	// Parse time
-	floatTime, err := strconv.ParseFloat(message.Timestamp, 64)
-	if err != nil {
-		floatTime = 0.0
-	}
-	intTime := int64(floatTime)
-
-	// Format message
-	msg := s.formatMessage(intTime, name, message.Text)
-
-	msgs = append(msgs, msg)
-
-	return msgs
 }
 
 // GetChannelName returns the channel name
