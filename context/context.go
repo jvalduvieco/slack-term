@@ -14,7 +14,7 @@ const (
 	// CommandMode sets the app into command mode
 	CommandMode = "command"
 	// InsertMode sets the app into insert mode
-	InsertMode  = "insert"
+	InsertMode = "insert"
 )
 
 // AppContext contains all app services and views

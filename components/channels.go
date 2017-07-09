@@ -111,6 +111,7 @@ func (c *Channels) SetX(x int) {
 func (c *Channels) SetY(y int) {
 	c.list.SetY(y)
 }
+
 // SetChannels sets the channels available
 func (c *Channels) SetChannels(channels service.Channels) {
 	sort.Sort(channels)
