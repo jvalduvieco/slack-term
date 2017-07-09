@@ -18,6 +18,7 @@ type SlackService struct {
 	userCache        map[string]string
 	currentUserID    map[string]string
 }
+
 // Channel represents a slack channel within this app
 type Channel struct {
 	ID           string

@@ -1,7 +1,7 @@
 Slack-Term
 ==========
-This is the result of me playing with go using slack-term by [erroneousboat](https://github.com/erroneousboat) great [slack-term](https://github.com/erroneousboat/slack-term)
-project. Don't consider stable but it's working (most of the time). Lot's to improve.
+This is the result of me playing with go using [slack-term](https://github.com/erroneousboat/slack-term) by [erroneousboat](https://github.com/erroneousboat) great
+project. Don't consider stable but it's working (most of the time). Lots to improve.
 
 A [Slack](https://slack.com) client for your terminal. Supports multiple teams, you need one token for each team.
 
