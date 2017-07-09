@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"github.com/gizak/termui"
-	"github.com/nlopes/slack"
-	termbox "github.com/nsf/termbox-go"
+	slack "github.com/nlopes/slack"
+	"github.com/nsf/termbox-go"
 
 	"github.com/erroneousboat/slack-term/context"
 	"github.com/erroneousboat/slack-term/views"
+	"log"
+	"github.com/erroneousboat/slack-term/components"
 )
 
 var timer *time.Timer
@@ -86,6 +88,9 @@ func incomingMessageHandler(ctx *context.AppContext, clientId string) {
 			select {
 			case msg := <-ctx.Service.RTM[clientId].IncomingEvents:
 				switch ev := msg.Data.(type) {
+				case *slack.ConnectedEvent:
+					//log.Println("Infos:", ev.Info)
+					MarkChannelsAsUnread(ev.Info.Channels, ctx.View.Channels)
 				case *slack.MessageEvent:
 
 					// Construct message
@@ -114,10 +119,20 @@ func incomingMessageHandler(ctx *context.AppContext, clientId string) {
 					if ev.User != ctx.Service.CurrentUserID[clientId] {
 						actionNewMessage(ctx, ev.Channel)
 					}
+				default:
+					log.Printf("Unhandled Event: %v\n", msg.Data)
 				}
+
 			}
 		}
 	}()
+}
+func MarkChannelsAsUnread(channels []slack.Channel, channelsView *components.Channels) {
+	for _, chn := range channels {
+		if chn.UnreadCountDisplay > 0 {
+			channelsView.MarkAsUnread(chn.ID)
+		}
+	}
 }
 
 // FIXME: resize only seems to work for width and resizing it too small

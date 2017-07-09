@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	VERSION = "v0.2.1"
-	USAGE   = `NAME:
+	version = "v0.2.1"
+	usage   = `NAME:
     slack-term - slack client for your terminal
 
 USAGE:
@@ -51,7 +51,7 @@ func init() {
 	)
 
 	flag.Usage = func() {
-		fmt.Printf(USAGE, VERSION)
+		fmt.Printf(usage, version)
 	}
 
 	flag.Parse()
@@ -59,10 +59,10 @@ func init() {
 
 func main() {
 
-	//err := OpenLogfile()
+	var err error
 
 	// Start terminal user interface
-	err := termui.Init()
+	err = termui.Init()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,15 +81,4 @@ func main() {
 	}()
 
 	termui.Loop()
-}
-func OpenLogfile() error {
-	f, err := os.OpenFile("filename", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//defer to close when you're done with it, not because you think it's idiomatic!
-	defer f.Close()
-	//set output of logs to f
-	log.SetOutput(f)
-	return err
 }

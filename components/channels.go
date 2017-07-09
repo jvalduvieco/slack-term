@@ -140,18 +140,20 @@ func (c *Channels) GetSelectedChannelId() string {
 // MoveCursorUp will decrease the SelectedListItemId by 1
 func (c *Channels) MoveCursorUp() {
 	if c.SelectedListItemId > 0 {
+		c.MarkAsRead(c.GetSelectedChannelId())
 		c.SetSelectedItem(c.SelectedListItemId - 1)
 		c.ScrollUp()
-		c.MarkAsRead()
+		c.MarkAsRead(c.GetSelectedChannelId())
 	}
 }
 
 // MoveCursorDown will increase the SelectedListItemId by 1
 func (c *Channels) MoveCursorDown() {
 	if c.SelectedListItemId < len(c.List.Items)-1 {
+		c.MarkAsRead(c.GetSelectedChannelId())
 		c.SetSelectedItem(c.SelectedListItemId + 1)
 		c.ScrollDown()
-		c.MarkAsRead()
+		c.MarkAsRead(c.GetSelectedChannelId())
 	}
 }
 
@@ -206,7 +208,7 @@ func (c *Channels) MarkAsUnread(channelID string) {
 		// The order of svc.Channels relates to the order of
 		// List.Items, index will be the index of the channel
 		c.List.Items[c.channelIds[channelID]] = fmt.Sprintf(
-			"* %s",
+			"*%s",
 			strings.TrimSpace(c.List.Items[c.channelIds[channelID]]))
 	}
 
@@ -217,11 +219,12 @@ func (c *Channels) MarkAsUnread(channelID string) {
 // MarkAsRead will remove the asterisk in front of a channel that
 // received a new message. This will happen as one will move up or down the
 // cursor for Channels
-func (c *Channels) MarkAsRead() {
-	channelName := strings.Split(c.List.Items[c.SelectedListItemId], "* ")
+func (c *Channels) MarkAsRead(channelId string) {
+	var listItemId = c.channelIds[channelId]
+	channelName := strings.Split(c.List.Items[listItemId], "*")
 	if len(channelName) > 1 {
-		c.List.Items[c.SelectedListItemId] = fmt.Sprintf("  %s", channelName[1])
+		c.List.Items[listItemId] = fmt.Sprintf(" %s", channelName[1])
 	} else {
-		c.List.Items[c.SelectedListItemId] = channelName[0]
+		c.List.Items[listItemId] = channelName[0]
 	}
 }

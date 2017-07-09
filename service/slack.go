@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nlopes/slack"
+	slack "github.com/nlopes/slack"
 )
 
 type SlackService struct {
