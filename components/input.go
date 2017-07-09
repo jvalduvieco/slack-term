@@ -6,37 +6,37 @@ import (
 
 // Input is the definition of an Input component
 type Input struct {
-	Par            *termui.Par
-	Text           []rune
-	CursorPosition int
+	par            *termui.Par
+	text           []rune
+	cursorPosition int
 }
 
 // CreateInput is the constructor of the Input struct
 func CreateInput() *Input {
 	input := &Input{
-		Par:            termui.NewPar(""),
-		Text:           make([]rune, 0),
-		CursorPosition: 0,
+		par:            termui.NewPar(""),
+		text:           make([]rune, 0),
+		cursorPosition: 0,
 	}
 
-	input.Par.Height = 3
+	input.par.Height = 3
 
 	return input
 }
 
 // Buffer implements interface termui.Bufferer
 func (i *Input) Buffer() termui.Buffer {
-	buf := i.Par.Buffer()
+	buf := i.par.Buffer()
 
 	// Set visible cursor
-	char := buf.At(i.Par.InnerX()+i.CursorPosition, i.Par.Block.InnerY())
+	char := buf.At(i.par.InnerX()+i.cursorPosition, i.par.Block.InnerY())
 	buf.Set(
-		i.Par.InnerX()+i.CursorPosition,
-		i.Par.Block.InnerY(),
+		i.par.InnerX()+i.cursorPosition,
+		i.par.Block.InnerY(),
 		termui.Cell{
 			Ch: char.Ch,
-			Fg: i.Par.TextBgColor,
-			Bg: i.Par.TextFgColor,
+			Fg: i.par.TextBgColor,
+			Bg: i.par.TextFgColor,
 		},
 	)
 
@@ -45,70 +45,70 @@ func (i *Input) Buffer() termui.Buffer {
 
 // GetHeight implements interface termui.GridBufferer
 func (i *Input) GetHeight() int {
-	return i.Par.Block.GetHeight()
+	return i.par.Block.GetHeight()
 }
 
 // SetWidth implements interface termui.GridBufferer
 func (i *Input) SetWidth(w int) {
-	i.Par.SetWidth(w)
+	i.par.SetWidth(w)
 }
 
 // SetX implements interface termui.GridBufferer
 func (i *Input) SetX(x int) {
-	i.Par.SetX(x)
+	i.par.SetX(x)
 }
 
 // SetY implements interface termui.GridBufferer
 func (i *Input) SetY(y int) {
-	i.Par.SetY(y)
+	i.par.SetY(y)
 }
 
-// Insert will insert a given key at the place of the current CursorPosition
+// Insert will insert a given key at the place of the current cursorPosition
 func (i *Input) Insert(key rune) {
-	if len(i.Text) < i.Par.InnerBounds().Dx()-1 {
+	if len(i.text) < i.par.InnerBounds().Dx()-1 {
 
-		first := append(i.Text[0:i.CursorPosition], key)
-		i.Text = append(first, i.Text[i.CursorPosition:]...)
+		first := append(i.text[0:i.cursorPosition], key)
+		i.text = append(first, i.text[i.cursorPosition:]...)
 
-		i.Par.Text = string(i.Text)
+		i.par.Text = string(i.text)
 		i.MoveCursorRight()
 	}
 }
 
-// Backspace will remove a character in front of the CursorPosition
+// Backspace will remove a character in front of the cursorPosition
 func (i *Input) Backspace() {
-	if i.CursorPosition > 0 {
-		i.Text = append(i.Text[0:i.CursorPosition-1], i.Text[i.CursorPosition:]...)
-		i.Par.Text = string(i.Text)
+	if i.cursorPosition > 0 {
+		i.text = append(i.text[0:i.cursorPosition-1], i.text[i.cursorPosition:]...)
+		i.par.Text = string(i.text)
 		i.MoveCursorLeft()
 	}
 }
 
-// Delete will remove a character at the CursorPosition
+// Delete will remove a character at the cursorPosition
 func (i *Input) Delete() {
-	if i.CursorPosition < len(i.Text) {
-		i.Text = append(i.Text[0:i.CursorPosition], i.Text[i.CursorPosition+1:]...)
-		i.Par.Text = string(i.Text)
+	if i.cursorPosition < len(i.text) {
+		i.text = append(i.text[0:i.cursorPosition], i.text[i.cursorPosition+1:]...)
+		i.par.Text = string(i.text)
 	}
 }
 
-// MoveCursorRight will increase the current CursorPosition with 1
+// MoveCursorRight will increase the current cursorPosition with 1
 func (i *Input) MoveCursorRight() {
-	if i.CursorPosition < len(i.Text) {
-		i.CursorPosition++
+	if i.cursorPosition < len(i.text) {
+		i.cursorPosition++
 	}
 }
 
-// MoveCursorLeft will decrease the current CursorPosition with 1
+// MoveCursorLeft will decrease the current cursorPosition with 1
 func (i *Input) MoveCursorLeft() {
-	if i.CursorPosition > 0 {
-		i.CursorPosition--
+	if i.cursorPosition > 0 {
+		i.cursorPosition--
 	}
 }
 
 // IsEmpty will return true when the input is empty
 func (i *Input) IsEmpty() bool {
-	if i.Par.Text == "" {
+	if i.par.Text == "" {
 		return true
 	}
 	return false
@@ -116,12 +116,12 @@ func (i *Input) IsEmpty() bool {
 
 // Clear will empty the input and move the cursor to the start position
 func (i *Input) Clear() {
-	i.Text = make([]rune, 0)
-	i.Par.Text = ""
-	i.CursorPosition = 0
+	i.text = make([]rune, 0)
+	i.par.Text = ""
+	i.cursorPosition = 0
 }
 
 // GetText returns the text currently in the input
 func (i *Input) GetText() string {
-	return i.Par.Text
+	return i.par.Text
 }

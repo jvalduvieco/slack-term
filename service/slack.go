@@ -9,24 +9,26 @@ import (
 	slack "github.com/nlopes/slack"
 )
 
+// SlackService is the service that manages slack connections
 type SlackService struct {
 	Client           map[string]*slack.Client
 	RTM              map[string]*slack.RTM
-	JoinedChannels   map[string]Channel
-	UnjoinedChannels map[string]Channel
-	UserCache        map[string]string
-	CurrentUserID    map[string]string
+	joinedChannels   map[string]Channel
+	unjoinedChannels map[string]Channel
+	userCache        map[string]string
+	currentUserID    map[string]string
 }
-
+// Channel represents a slack channel within this app
 type Channel struct {
-	Id           string
+	ID           string
 	Name         string
 	Topic        string
 	SlackChannel interface{}
-	ClientId     string
+	ClientID     string
 	ChannelType  ChannelType
 }
 
+// Channels is an array of Channel, mainly to sort
 type Channels []Channel
 
 func (s Channels) Len() int {
@@ -38,54 +40,58 @@ func (s Channels) Swap(i, j int) {
 }
 
 func (s Channels) Less(i, j int) bool {
-	var first string = fmt.Sprintf("%s %d %s", s[i].ClientId, s[i].ChannelType, s[i].Name)
-	var second string = fmt.Sprintf("%s %d %s", s[j].ClientId, s[j].ChannelType, s[j].Name)
+	var first = fmt.Sprintf("%s %d %s", s[i].ClientID, s[i].ChannelType, s[i].Name)
+	var second = fmt.Sprintf("%s %d %s", s[j].ClientID, s[j].ChannelType, s[j].Name)
 	return first < second
 }
 
+// ChannelType Type of the channel, see constant below
 type ChannelType uint8
 
 const (
+	// CHANNEL Constants that define channel type. Also used to order channels in the channels widget
 	CHANNEL ChannelType = iota + 1
+	// GROUP for group chats
 	GROUP
+	// IM for direct messages
 	IM
 )
 
 // CreateSlackService is the constructor for the SlackService and will initialize
-// the RTM and a ClientId
+// the RTM and a ClientID
 func CreateSlackService(tokens map[string]string) *SlackService {
 	svc := &SlackService{
 		Client:           make(map[string]*slack.Client),
 		RTM:              make(map[string]*slack.RTM),
-		JoinedChannels:   make(map[string]Channel),
-		UnjoinedChannels: make(map[string]Channel),
-		UserCache:        make(map[string]string),
-		CurrentUserID:    make(map[string]string),
+		joinedChannels:   make(map[string]Channel),
+		unjoinedChannels: make(map[string]Channel),
+		userCache:        make(map[string]string),
+		currentUserID:    make(map[string]string),
 	}
 
-	for clientId, token := range tokens {
-		svc.Client[clientId] = slack.New(token)
+	for clientID, token := range tokens {
+		svc.Client[clientID] = slack.New(token)
 
 		// Get channelUser associated with token, mainly
 		// used to identify channelUser when new messages
 		// arrives
-		authTest, err := svc.Client[clientId].AuthTest()
+		authTest, err := svc.Client[clientID].AuthTest()
 		if err != nil {
 			log.Fatal("ERROR: not able to authorize client, check your connection and/or slack-token")
 		}
-		svc.CurrentUserID[clientId] = authTest.UserID
+		svc.currentUserID[clientID] = authTest.UserID
 
 		// Create RTM
-		svc.RTM[clientId] = svc.Client[clientId].NewRTM()
-		go svc.RTM[clientId].ManageConnection()
+		svc.RTM[clientID] = svc.Client[clientID].NewRTM()
+		go svc.RTM[clientID].ManageConnection()
 
 		// Creation of channelUser cache this speeds up
 		// the uncovering of usernames of messages
-		users, _ := svc.Client[clientId].GetUsers()
+		users, _ := svc.Client[clientID].GetUsers()
 		for _, channelUser := range users {
 			// only add non-deleted users
 			if !channelUser.Deleted {
-				svc.UserCache[channelUser.ID] = channelUser.Name
+				svc.userCache[channelUser.ID] = channelUser.Name
 			}
 		}
 	}
@@ -93,37 +99,44 @@ func CreateSlackService(tokens map[string]string) *SlackService {
 	return svc
 }
 
-// UpdateChannels will retrieve all available channels, groups, and im channels.
+// updateChannels will retrieve all available channels, groups, and im channels.
 // We will return different channel collections, first channels the user is a member of
 // and secondly a list of unarchived channels the user can join
 // Because the channels are of different types, we will append them to
 // an []interface as well as to a []Channel which will give us easy access
 // to the id and name of the Channel.
-func (s *SlackService) UpdateChannels() {
+func (s *SlackService) updateChannels() {
 	// FIXME Check errors
-	for currentClientId := range s.Client {
+	for currentClientID := range s.Client {
 		// Channel
-		_ = s.FetchChannels(currentClientId)
+		_ = s.fetchChannels(currentClientID)
 
 		// Groups
-		_ = s.FetchGroups(currentClientId)
+		_ = s.fetchGroups(currentClientID)
 
 		// IM
-		_ = s.FetchIM(currentClientId)
+		_ = s.fetchIM(currentClientID)
 	}
 }
 
+// GetChannelList returns a list of all channels
 func (s *SlackService) GetChannelList() []Channel {
-	s.UpdateChannels()
+	s.updateChannels()
 	var result Channels
-	for _, channel := range s.JoinedChannels {
+	for _, channel := range s.joinedChannels {
 		result = append(result, channel)
 	}
 
 	return result
 }
-func (s *SlackService) FetchIM(currentClientId string) error {
-	slackIM, err := s.Client[currentClientId].GetIMChannels()
+
+// GetCurrentUserID returns the current user ID
+func (s *SlackService) GetCurrentUserID(clientID string) string {
+	return s.currentUserID[clientID]
+}
+
+func (s *SlackService) fetchIM(currentClientID string) error {
+	slackIM, err := s.Client[currentClientID].GetIMChannels()
 	if err != nil {
 		//chans = append(chans, Channel{})
 	}
@@ -132,35 +145,36 @@ func (s *SlackService) FetchIM(currentClientId string) error {
 		// Uncover name, when we can't uncover name for
 		// IM channel this is then probably a deleted
 		// user, because we wont add deleted users
-		// to the UserCache, so we skip it
-		name, ok := s.UserCache[im.User]
+		// to the userCache, so we skip it
+		name, ok := s.userCache[im.User]
 		if ok {
-			s.JoinedChannels[im.ID] = Channel{im.ID, name, "", im, currentClientId, IM}
+			s.joinedChannels[im.ID] = Channel{im.ID, name, "", im, currentClientID, IM}
 		}
 	}
 	return err
 }
 
-func (s *SlackService) FetchGroups(currentClientId string) error {
-	slackGroups, err := s.Client[currentClientId].GetGroups(true)
+func (s *SlackService) fetchGroups(currentClientID string) error {
+	slackGroups, err := s.Client[currentClientID].GetGroups(true)
 	if err != nil {
 		//chans = append(chans, Channel{})
 	}
 	for _, grp := range slackGroups {
-		s.JoinedChannels[grp.ID] = Channel{grp.ID, grp.Name, grp.Topic.Value, grp, currentClientId, GROUP}
+		s.joinedChannels[grp.ID] = Channel{grp.ID, grp.Name, grp.Topic.Value, grp, currentClientID, GROUP}
 	}
 	return err
 }
-func (s *SlackService) FetchChannels(currentClientId string) error {
-	slackChans, err := s.Client[currentClientId].GetChannels(true)
+
+func (s *SlackService) fetchChannels(currentClientID string) error {
+	slackChans, err := s.Client[currentClientID].GetChannels(true)
 	if err != nil {
 		//chans = append(chans, Channel{})
 	}
 	for _, chn := range slackChans {
 		if chn.IsMember {
-			s.JoinedChannels[chn.ID] = Channel{chn.ID, chn.Name, chn.Topic.Value, chn, currentClientId, CHANNEL}
+			s.joinedChannels[chn.ID] = Channel{chn.ID, chn.Name, chn.Topic.Value, chn, currentClientID, CHANNEL}
 		} else {
-			s.UnjoinedChannels[chn.ID] = Channel{chn.ID, chn.Name, chn.Topic.Value, chn, currentClientId, CHANNEL}
+			s.unjoinedChannels[chn.ID] = Channel{chn.ID, chn.Name, chn.Topic.Value, chn, currentClientID, CHANNEL}
 		}
 	}
 	return err
@@ -168,21 +182,21 @@ func (s *SlackService) FetchChannels(currentClientId string) error {
 
 // SetChannelReadMark will set the read mark for a channel, group, and im
 // channel based on the current time.
-func (s *SlackService) SetChannelReadMark(channelId string) {
-	selectedChannel := s.JoinedChannels[channelId]
+func (s *SlackService) SetChannelReadMark(channelID string) {
+	selectedChannel := s.joinedChannels[channelID]
 	switch channel := selectedChannel.SlackChannel.(type) {
 	case slack.Channel:
-		s.Client[selectedChannel.ClientId].SetChannelReadMark(
+		s.Client[selectedChannel.ClientID].SetChannelReadMark(
 			channel.ID, fmt.Sprintf("%f",
 				float64(time.Now().Unix())),
 		)
 	case slack.Group:
-		s.Client[selectedChannel.ClientId].SetGroupReadMark(
+		s.Client[selectedChannel.ClientID].SetGroupReadMark(
 			channel.ID, fmt.Sprintf("%f",
 				float64(time.Now().Unix())),
 		)
 	case slack.IM:
-		s.Client[selectedChannel.ClientId].MarkIMChannel(
+		s.Client[selectedChannel.ClientID].MarkIMChannel(
 			channel.ID, fmt.Sprintf("%f",
 				float64(time.Now().Unix())),
 		)
@@ -190,21 +204,21 @@ func (s *SlackService) SetChannelReadMark(channelId string) {
 }
 
 // SendMessage will send a message to a particular channel
-func (s *SlackService) SendMessage(channelId string, message string) {
-	currentChannel := s.JoinedChannels[channelId]
+func (s *SlackService) SendMessage(channelID string, message string) {
+	currentChannel := s.joinedChannels[channelID]
 	// https://godoc.org/github.com/nlopes/slack#PostMessageParameters
 	postParams := slack.PostMessageParameters{
 		AsUser: true,
 	}
 
 	// https://godoc.org/github.com/nlopes/slack#Client.PostMessage
-	s.Client[currentChannel.ClientId].PostMessage(channelId, message, postParams)
+	s.Client[currentChannel.ClientID].PostMessage(channelID, message, postParams)
 }
 
 // GetMessages will get messages for a channel, group or im channel delimited
 // by a count.
-func (s *SlackService) GetMessages(channelId string, count int) []string {
-	channel := s.JoinedChannels[channelId]
+func (s *SlackService) GetMessages(channelID string, count int) []string {
+	channel := s.joinedChannels[channelID]
 	// https://api.slack.com/methods/channels.history
 	historyParams := slack.HistoryParameters{
 		Count:     count,
@@ -217,17 +231,17 @@ func (s *SlackService) GetMessages(channelId string, count int) []string {
 	var err error
 	switch chnType := channel.SlackChannel.(type) {
 	case slack.Channel:
-		history, err = s.Client[channel.ClientId].GetChannelHistory(chnType.ID, historyParams)
+		history, err = s.Client[channel.ClientID].GetChannelHistory(chnType.ID, historyParams)
 		if err != nil {
 			log.Fatal(err) // FIXME
 		}
 	case slack.Group:
-		history, err = s.Client[channel.ClientId].GetGroupHistory(chnType.ID, historyParams)
+		history, err = s.Client[channel.ClientID].GetGroupHistory(chnType.ID, historyParams)
 		if err != nil {
 			log.Fatal(err) // FIXME
 		}
 	case slack.IM:
-		history, err = s.Client[channel.ClientId].GetIMHistory(chnType.ID, historyParams)
+		history, err = s.Client[channel.ClientID].GetIMHistory(chnType.ID, historyParams)
 		if err != nil {
 			log.Fatal(err) // FIXME
 		}
@@ -236,7 +250,7 @@ func (s *SlackService) GetMessages(channelId string, count int) []string {
 	// Construct the messages
 	var messages []string
 	for _, message := range history.Messages {
-		msg := s.CreateMessage(message, channel.ClientId)
+		msg := s.CreateMessage(message, channel.ClientID)
 		messages = append(messages, msg...)
 	}
 
@@ -257,32 +271,32 @@ func (s *SlackService) GetMessages(channelId string, count int) []string {
 //
 // This returns an array of string because we will try to uncover attachments
 // associated with messages.
-func (s *SlackService) CreateMessage(message slack.Message, clientId string) []string {
+func (s *SlackService) CreateMessage(message slack.Message, clientID string) []string {
 	var msgs []string
 	var name string
 
 	// Get username from cache
-	name, ok := s.UserCache[message.User]
+	name, ok := s.userCache[message.User]
 
 	// Name not in cache
 	if !ok {
 		if message.BotID != "" {
 			// Name not found, perhaps a bot, use Username
-			name, ok = s.UserCache[message.BotID]
+			name, ok = s.userCache[message.BotID]
 			if !ok {
 				// Not found in cache, add it
 				name = message.Username
-				s.UserCache[message.BotID] = message.Username
+				s.userCache[message.BotID] = message.Username
 			}
 		} else {
 			// Not a bot, not in cache, get user info
-			channelUser, err := s.Client[clientId].GetUserInfo(message.User)
+			channelUser, err := s.Client[clientID].GetUserInfo(message.User)
 			if err != nil {
 				name = "unknown"
-				s.UserCache[message.User] = name
+				s.userCache[message.User] = name
 			} else {
 				name = channelUser.Name
-				s.UserCache[message.User] = channelUser.Name
+				s.userCache[message.User] = channelUser.Name
 			}
 		}
 	}
@@ -304,13 +318,14 @@ func (s *SlackService) CreateMessage(message slack.Message, clientId string) []s
 	intTime := int64(floatTime)
 
 	// Format message
-	msg := s.FormatMessage(intTime, name, message.Text)
+	msg := s.formatMessage(intTime, name, message.Text)
 
 	msgs = append(msgs, msg)
 
 	return msgs
 }
-func (s *SlackService) FormatMessage(intTime int64, name string, message string) string {
+
+func (s *SlackService) formatMessage(intTime int64, name string, message string) string {
 	msg := fmt.Sprintf(
 		"[%s] <[%s](fg-green)> %s",
 		time.Unix(intTime, 0).Format("15:04"),
@@ -320,7 +335,8 @@ func (s *SlackService) FormatMessage(intTime int64, name string, message string)
 	return msg
 }
 
-func (s *SlackService) CreateMessageFromMessageEvent(message *slack.MessageEvent, clientId string) []string {
+// CreateMessageFromMessageEvent creates a message from an event
+func (s *SlackService) CreateMessageFromMessageEvent(message *slack.MessageEvent, clientID string) []string {
 
 	var msgs []string
 	var name string
@@ -332,27 +348,27 @@ func (s *SlackService) CreateMessageFromMessageEvent(message *slack.MessageEvent
 	}
 
 	// Get username from cache
-	name, ok := s.UserCache[message.User]
+	name, ok := s.userCache[message.User]
 
 	// Name not in cache
 	if !ok {
 		if message.BotID != "" {
 			// Name not found, perhaps a bot, use Username
-			name, ok = s.UserCache[message.BotID]
+			name, ok = s.userCache[message.BotID]
 			if !ok {
 				// Not found in cache, add it
 				name = message.Username
-				s.UserCache[message.BotID] = message.Username
+				s.userCache[message.BotID] = message.Username
 			}
 		} else {
 			// Not a bot, not in cache, get user info
-			user, err := s.Client[clientId].GetUserInfo(message.User)
+			user, err := s.Client[clientID].GetUserInfo(message.User)
 			if err != nil {
 				name = "unknown"
-				s.UserCache[message.User] = name
+				s.userCache[message.User] = name
 			} else {
 				name = user.Name
-				s.UserCache[message.User] = user.Name
+				s.userCache[message.User] = user.Name
 			}
 		}
 	}
@@ -374,19 +390,21 @@ func (s *SlackService) CreateMessageFromMessageEvent(message *slack.MessageEvent
 	intTime := int64(floatTime)
 
 	// Format message
-	msg := s.FormatMessage(intTime, name, message.Text)
+	msg := s.formatMessage(intTime, name, message.Text)
 
 	msgs = append(msgs, msg)
 
 	return msgs
 }
 
-func (s *SlackService) GetChannelName(channelId string) string {
-	return s.JoinedChannels[channelId].Name
+// GetChannelName returns the channel name
+func (s *SlackService) GetChannelName(channelID string) string {
+	return s.joinedChannels[channelID].Name
 }
 
-func (s *SlackService) GetChannelTopic(channelId string) string {
-	return s.JoinedChannels[channelId].Topic
+// GetChannelTopic returns the channel topic
+func (s *SlackService) GetChannelTopic(channelID string) string {
+	return s.joinedChannels[channelID].Topic
 }
 
 // createMessageFromAttachments will construct a array of string of the Field

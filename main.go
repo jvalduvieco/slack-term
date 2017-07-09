@@ -12,7 +12,6 @@ import (
 	termbox "github.com/nsf/termbox-go"
 
 	"github.com/gizak/termui"
-	"os"
 )
 
 const (

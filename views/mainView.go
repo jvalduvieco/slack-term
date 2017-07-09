@@ -8,6 +8,7 @@ import (
 	"github.com/erroneousboat/slack-term/service"
 )
 
+// View contains all app widgets
 type View struct {
 	Input    *components.Input
 	Chat     *components.Chat
@@ -16,24 +17,25 @@ type View struct {
 	Body     *termui.Grid
 }
 
+// CreateUIComponents builds all the widgets needed for the app
 func CreateUIComponents(config *config.Config, svc *service.SlackService) *View {
 
 	inputComponent := components.CreateInput()
 
-	channelsComponent := components.CreateChannels(inputComponent.Par.Height)
+	channelsComponent := components.CreateChannels(inputComponent.GetHeight())
 	channels := svc.GetChannelList()
 	channelsComponent.SetChannels(channels)
 
 	chatComponent := components.CreateChat(
-		inputComponent.Par.Height,
-		svc.GetChannelName(channelsComponent.GetSelectedChannelId()),
-		svc.GetChannelTopic(channelsComponent.GetSelectedChannelId()),
+		inputComponent.GetHeight(),
+		svc.GetChannelName(channelsComponent.GetSelectedChannelID()),
+		svc.GetChannelTopic(channelsComponent.GetSelectedChannelID()),
 	)
 
-	chatComponent.SetMessages(
+	chatComponent.AddMessages(
 		svc.GetMessages(
-			channelsComponent.GetSelectedChannelId(),
-			chatComponent.GetNumberOfMessagesVisible()))
+			channelsComponent.GetSelectedChannelID(),
+			chatComponent.GetMaxNumberOfMessagesVisible()))
 	modeComponent := components.CreateMode()
 
 	// Setup body
@@ -61,6 +63,7 @@ func CreateUIComponents(config *config.Config, svc *service.SlackService) *View 
 	return view
 }
 
+// Refresh renders all widgets on demand
 func (v *View) Refresh() {
 	termui.Render(
 		v.Input,

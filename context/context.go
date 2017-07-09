@@ -11,10 +11,13 @@ import (
 )
 
 const (
+	// CommandMode sets the app into command mode
 	CommandMode = "command"
+	// InsertMode sets the app into insert mode
 	InsertMode  = "insert"
 )
 
+// AppContext contains all app services and views
 type AppContext struct {
 	EventQueue chan termbox.Event
 	Service    *service.SlackService

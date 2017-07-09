@@ -8,10 +8,9 @@ import (
 	slack "github.com/nlopes/slack"
 	"github.com/nsf/termbox-go"
 
+	"github.com/erroneousboat/slack-term/components"
 	"github.com/erroneousboat/slack-term/context"
 	"github.com/erroneousboat/slack-term/views"
-	"log"
-	"github.com/erroneousboat/slack-term/components"
 )
 
 var timer *time.Timer
@@ -38,6 +37,7 @@ var actionMap = map[string]func(*context.AppContext){
 	"help":           actionHelp,
 }
 
+// RegisterEventHandlers registers event handlers into the app context
 func RegisterEventHandlers(ctx *context.AppContext) {
 	anyKeyHandler(ctx)
 	for key := range ctx.Service.Client {
@@ -82,22 +82,22 @@ func resizeHandler(ctx *context.AppContext) func(termui.Event) {
 	}
 }
 
-func incomingMessageHandler(ctx *context.AppContext, clientId string) {
+func incomingMessageHandler(ctx *context.AppContext, clientID string) {
 	go func() {
 		for {
 			select {
-			case msg := <-ctx.Service.RTM[clientId].IncomingEvents:
+			case msg := <-ctx.Service.RTM[clientID].IncomingEvents:
 				switch ev := msg.Data.(type) {
 				case *slack.ConnectedEvent:
 					//log.Println("Infos:", ev.Info)
-					MarkChannelsAsUnread(ev.Info.Channels, ctx.View.Channels)
+					markChannelsAsUnread(ev.Info.Channels, ctx.View.Channels)
 				case *slack.MessageEvent:
 
 					// Construct message
-					msg := ctx.Service.CreateMessageFromMessageEvent(ev, clientId)
+					msg := ctx.Service.CreateMessageFromMessageEvent(ev, clientID)
 
 					// Add message to the selected channel
-					if ev.Channel == ctx.View.Channels.GetSelectedChannelId() {
+					if ev.Channel == ctx.View.Channels.GetSelectedChannelID() {
 
 						// reverse order of messages, mainly done
 						// when attachments are added to message
@@ -107,7 +107,7 @@ func incomingMessageHandler(ctx *context.AppContext, clientId string) {
 
 						termui.Render(ctx.View.Chat)
 
-						// TODO: set Chat.Offset to 0, to automatically scroll
+						// TODO: set Chat.offset to 0, to automatically scroll
 						// down?
 					}
 
@@ -116,18 +116,18 @@ func incomingMessageHandler(ctx *context.AppContext, clientId string) {
 					// I'm currently in a channel but not in the terminal
 					// window (tmux). But only create a notification when
 					// it comes from someone else but the current user.
-					if ev.User != ctx.Service.CurrentUserID[clientId] {
+					if ev.User != ctx.Service.GetCurrentUserID(clientID) {
 						actionNewMessage(ctx, ev.Channel)
 					}
 				default:
-					log.Printf("Unhandled Event: %v\n", msg.Data)
+					//log.Printf("Unhandled Event: %v\n", msg.Data)
 				}
 
 			}
 		}
 	}()
 }
-func MarkChannelsAsUnread(channels []slack.Channel, channelsView *components.Channels) {
+func markChannelsAsUnread(channels []slack.Channel, channelsView *components.Channels) {
 	for _, chn := range channels {
 		if chn.UnreadCountDisplay > 0 {
 			channelsView.MarkAsUnread(chn.ID)
@@ -183,7 +183,7 @@ func actionSend(ctx *context.AppContext) {
 		ctx.View.Refresh()
 
 		ctx.Service.SendMessage(
-			ctx.View.Channels.GetSelectedChannelId(),
+			ctx.View.Channels.GetSelectedChannelID(),
 			message)
 	}
 }
@@ -195,13 +195,13 @@ func actionQuit(ctx *context.AppContext) {
 
 func actionInsertMode(ctx *context.AppContext) {
 	ctx.Mode = context.InsertMode
-	ctx.View.Mode.Par.Text = "INSERT"
+	ctx.View.Mode.SetText("INSERT")
 	termui.Render(ctx.View.Mode)
 }
 
 func actionCommandMode(ctx *context.AppContext) {
 	ctx.Mode = context.CommandMode
-	ctx.View.Mode.Par.Text = "COMMAND"
+	ctx.View.Mode.SetText("COMMAND")
 	termui.Render(ctx.View.Mode)
 }
 
@@ -252,19 +252,19 @@ func actionChangeChannel(ctx *context.AppContext) {
 	ctx.View.Chat.ClearMessages()
 
 	// Get message for the new channel
-	ctx.View.Chat.SetMessages(
+	ctx.View.Chat.AddMessages(
 		ctx.Service.GetMessages(
-			ctx.View.Channels.GetSelectedChannelId(),
-			ctx.View.Chat.GetNumberOfMessagesVisible()))
+			ctx.View.Channels.GetSelectedChannelID(),
+			ctx.View.Chat.GetMaxNumberOfMessagesVisible()))
 
 	// Set channel name for the Chat pane
 	ctx.View.Chat.SetBorderLabel(
-		ctx.Service.GetChannelName(ctx.View.Channels.GetSelectedChannelId()),
-		ctx.Service.GetChannelTopic(ctx.View.Channels.GetSelectedChannelId()),
+		ctx.Service.GetChannelName(ctx.View.Channels.GetSelectedChannelID()),
+		ctx.Service.GetChannelTopic(ctx.View.Channels.GetSelectedChannelID()),
 	)
 
 	// Set read mark
-	ctx.Service.SetChannelReadMark(ctx.View.Channels.GetSelectedChannelId())
+	ctx.Service.SetChannelReadMark(ctx.View.Channels.GetSelectedChannelID())
 	termui.Render(ctx.View.Channels)
 	termui.Render(ctx.View.Chat)
 }
@@ -285,7 +285,7 @@ func actionScrollDownChat(ctx *context.AppContext) {
 }
 
 func actionHelp(ctx *context.AppContext) {
-	ctx.View.Chat.Help(ctx.Config)
+	ctx.View.Chat.ShowHelp(ctx.Config)
 	termui.Render(ctx.View.Chat)
 }
 
