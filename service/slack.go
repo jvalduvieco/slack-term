@@ -143,6 +143,10 @@ func (s *SlackService) fetchIM(currentClientID string) error {
 		//chans = append(chans, Channel{})
 	}
 	for _, im := range slackIM {
+		// Avoid IM from myself
+		if im.User == s.currentUserID[currentClientID] {
+			continue
+		}
 
 		// Uncover name, when we can't uncover name for
 		// IM channel this is then probably a deleted
@@ -332,7 +336,7 @@ func parseMessageTimestamp(message slack.Message) int64 {
 	return intTime
 }
 
-func (s *SlackService) getMessageUserName(message slack.Message, clientID string) (string) {
+func (s *SlackService) getMessageUserName(message slack.Message, clientID string) string {
 	// Get username from cache
 	name, ok := s.userCache[message.User]
 
