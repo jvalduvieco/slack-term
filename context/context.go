@@ -5,9 +5,9 @@ import (
 
 	termbox "github.com/nsf/termbox-go"
 
-	"github.com/erroneousboat/slack-term/config"
-	"github.com/erroneousboat/slack-term/service"
-	"github.com/erroneousboat/slack-term/views"
+	"github.com/jvalduvieco/slack-term/config"
+	"github.com/jvalduvieco/slack-term/service"
+	"github.com/jvalduvieco/slack-term/views"
 )
 
 const (

@@ -8,7 +8,7 @@ import (
 
 	"github.com/gizak/termui"
 
-	"github.com/erroneousboat/slack-term/config"
+	"github.com/jvalduvieco/slack-term/config"
 )
 
 // Chat is the definition of a Chat component

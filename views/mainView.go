@@ -3,9 +3,9 @@ package views
 import (
 	"github.com/gizak/termui"
 
-	"github.com/erroneousboat/slack-term/components"
-	"github.com/erroneousboat/slack-term/config"
-	"github.com/erroneousboat/slack-term/service"
+	"github.com/jvalduvieco/slack-term/components"
+	"github.com/jvalduvieco/slack-term/config"
+	"github.com/jvalduvieco/slack-term/service"
 )
 
 // View contains all app widgets

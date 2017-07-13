@@ -6,7 +6,7 @@ import (
 
 	"github.com/gizak/termui"
 
-	"github.com/erroneousboat/slack-term/service"
+	"github.com/jvalduvieco/slack-term/service"
 	"sort"
 )
 
